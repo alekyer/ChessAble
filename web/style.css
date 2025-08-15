@@ -1,0 +1,107 @@
+﻿*
+{
+  box-sizing: border-box;
+}
+
+html, body
+{
+  margin: 0; padding: 0; font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+}
+
+:root
+{
+  --move-glow: #00adff;
+  --attack-glow: #ff4040;
+  --select-glow: #ffd500;
+
+  /* Board background image is set via JS: url(/boards/xxx.png) */
+  --board-bg: none;
+}
+
+header, .controls, footer
+{
+  max-width: 720px;
+  margin: 12px auto;
+  padding: 0 12px;
+}
+
+.controls label
+{
+  margin-right: 12px; display: inline-flex; align-items: center; gap: 6px;
+}
+
+.board
+{
+  width: min(92vw, 640px);
+  aspect-ratio: 1 / 1;
+  margin: 12px auto 28px;
+  display: grid;
+  grid-template-columns: repeat(8, 1fr);
+  grid-template-rows: repeat(8, 1fr);
+  border: 6px solid #333;
+  border-radius: 8px;
+  overflow: hidden;
+  background-image: var(--board-bg);
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  position: relative;
+}
+
+/* Transparent squares */
+.square
+{
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  font-size: clamp(20px, 5.6vw, 44px);
+  user-select: none;
+  cursor: pointer;
+  transition: filter 0.12s ease;
+  outline: 1px solid rgba(0,0,0,0.08);
+  outline-offset: -1px;
+}
+.square:hover
+{
+  filter: brightness(1.05);
+}
+
+/* Piece images */
+.piece-img
+{
+  width: 85%;
+  height: 85%;
+  object-fit: contain;
+  pointer-events: none; /* allow square to receive the click */
+  image-rendering: auto;
+  filter: drop-shadow(0 0 1px rgba(0,0,0,0.6));
+}
+
+/* Glow highlights */
+.highlight-move::after,
+.highlight-attack::after,
+.highlight-selected::after
+{
+  content: "";
+  position: absolute;
+  inset: 2px;
+  border-radius: 4px;
+  pointer-events: none;
+}
+
+.highlight-move::after
+{
+  box-shadow: 0 0 10px var(--move-glow), 0 0 22px var(--move-glow), inset 0 0 10px var(--move-glow);
+}
+
+.highlight-attack::after
+{
+  box-shadow: 0 0 10px var(--attack-glow), 0 0 22px var(--attack-glow), inset 0 0 10px var(--attack-glow);
+}
+
+.highlight-selected::after
+{
+  box-shadow: 0 0 10px var(--select-glow), 0 0 22px var(--select-glow), inset 0 0 10px var(--select-glow);
+}

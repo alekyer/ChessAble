@@ -1,0 +1,121 @@
+﻿<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Chess Attack Visualizer — Static</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header>
+    <h1>Chess Attack Visualizer</h1>
+    <p>Click any piece to see its <strong>moves</strong> and <strong>attacks</strong>. Customize glow, board theme, and piece set.</p>
+  </header>
+
+  <section class="controls">
+    <label>Mode:
+      <select id="mode">
+        <option value="both" selected>Moves + Attacks</option>
+        <option value="moves">Moves only</option>
+        <option value="attacks">Attacks only</option>
+      </select>
+    </label>
+
+    <label>Move glow:
+      <input type="color" id="moveColor" value="#00adff" />
+    </label>
+
+    <label>Attack glow:
+      <input type="color" id="attackColor" value="#ff4040" />
+    </label>
+
+    <label>Board theme:
+      <select id="boardTheme">
+        <option>8_bit.png</option>
+        <option>bases.png</option>
+        <option>blue.png</option>
+        <option>brown.png</option>
+        <option>bubblegum.png</option>
+        <option>burled_wood.png</option>
+        <option>dark_wood.png</option>
+        <option>dash.png</option>
+        <option>glass.png</option>
+        <option>graffiti.png</option>
+        <option>green.png</option>
+        <option>icy_sea.png</option>
+        <option>light.png</option>
+        <option>lolz.png</option>
+        <option>marble.png</option>
+        <option>metal.png</option>
+        <option>neon.png</option>
+        <option>newspaper.png</option>
+        <option>orange.png</option>
+        <option>overlay.png</option>
+        <option>parchment.png</option>
+        <option>purple.png</option>
+        <option>red.png</option>
+        <option>sand.png</option>
+        <option>sky.png</option>
+        <option>stone.png</option>
+        <option>tan.png</option>
+        <option selected>tournament.png</option>
+        <option>translucent.png</option>
+        <option>walnut.png</option>
+      </select>
+    </label>
+
+    <label>Piece set:
+      <select id="pieceTheme">
+        <option>3d_chesskid</option>
+        <option>3d_plastic</option>
+        <option>3d_staunton</option>
+        <option>3d_wood</option>
+        <option>8_bit</option>
+        <option>alpha</option>
+        <option>bases</option>
+        <option>blindfold</option>
+        <option>book</option>
+        <option>bubblegum</option>
+        <option>cases</option>
+        <option>classic</option>
+        <option>club</option>
+        <option>condal</option>
+        <option>dash</option>
+        <option>game_room</option>
+        <option>glass</option>
+        <option>gothic</option>
+        <option>graffiti</option>
+        <option>icy_sea</option>
+        <option>light</option>
+        <option>lolz</option>
+        <option>marble</option>
+        <option>maya</option>
+        <option>metal</option>
+        <option>modern</option>
+        <option>nature</option>
+        <option selected>neo</option>
+        <option>neon</option>
+        <option>neo_wood</option>
+        <option>newspaper</option>
+        <option>ocean</option>
+        <option>sky</option>
+        <option>space</option>
+        <option>tigers</option>
+        <option>tournament</option>
+        <option>vintage</option>
+        <option>wood</option>
+      </select>
+    </label>
+  </section>
+
+  <main>
+    <div id="board" class="board"></div>
+  </main>
+
+  <footer>
+    <small>Static build. Engine ignores check/castling/en passant *for now*.</small>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>
