@@ -1,6 +1,6 @@
 ﻿(function ()
 {
-  const ROOT = "."; // was ".."
+  const ROOT = "."; // ensure assets resolve from project root
 
   const boardEl = document.getElementById("board");
   const modeEl = document.getElementById("mode");
@@ -10,6 +10,7 @@
   const pieceThemeEl = document.getElementById("pieceTheme");
 
   const kindToLetter = { K:"k", Q:"q", R:"r", B:"b", N:"n", P:"p" };
+  const PROMOTION_KINDS = [ "Q", "R", "B", "N" ];
 
   const W = "w";
   const B = "b";
@@ -23,6 +24,7 @@
   function applyBoardTheme(name)
   {
     setCSSVar("--board-bg", `url(${ROOT}/boards/${name})`);
+
     try
     {
       localStorage.setItem("boardTheme", name);
@@ -48,6 +50,7 @@
       document.body.classList.remove("pixelated");
     }
 
+    // Update board piece images
     document.querySelectorAll(".piece-img").forEach((img) =>
     {
       const color = (img.getAttribute("data-color") || "").toLowerCase();
@@ -65,6 +68,9 @@
       }
     });
 
+    // Update popup choices if a promotion is pending
+    refreshPromotionPopupImages();
+
     try
     {
       localStorage.setItem("pieceTheme", name);
@@ -73,7 +79,7 @@
     {}
   }
 
-  // ---- Position + simple engine (no check/pins/castling/en passant) ----
+  // ---- Position + engine state (en passant + promotion UI) ----
   function startingPosition()
   {
     const g = Array.from({ length: 8 }, () => Array(8).fill(null));
@@ -91,12 +97,15 @@
   {
     grid: startingPosition(),
     turn: W,
-    selected: null,          // { r, c }
-    legal: {                  // caches for current selection
+    selected: null,              // { r, c }
+    legal:
+    {
       moves: new Set(),
       attacks: new Set()
     },
-    lastMove: null           // { from:{r,c}, to:{r,c} }
+    lastMove: null,              // { from:{r,c}, to:{r,c} }
+    enPassant: null,             // { r, c, by:"w"|"b", capturedAt:{r,c} }
+    promotion: null              // { r, c, color, popupEl, backdropEl }
   };
 
   function inBounds(r, c)
@@ -152,6 +161,7 @@
     return { moves, attacks };
   }
 
+  // mode: "both" | "moves" | "attacks" (UI-only; legality is always both)
   function highlights(r, c, mode)
   {
     const p = at(r, c);
@@ -169,14 +179,6 @@
     let moves = [];
     let attacks = [];
 
-    const add = (m, a) =>
-    {
-      return {
-        moves: [ ...moves, ...(wantMoves ? m : []) ],
-        attacks: [ ...attacks, ...(wantAttacks ? a : []) ]
-      };
-    };
-
     switch (p.kind)
     {
       case "N":
@@ -187,12 +189,14 @@
         {
           const rr = r + dr;
           const cc = c + dc;
+
           if (!inBounds(rr, cc))
           {
             continue;
           }
 
           const t = at(rr, cc);
+
           if (!t && wantMoves)
           {
             moves.push({ r: rr, c: cc });
@@ -202,6 +206,7 @@
             attacks.push({ r: rr, c: cc });
           }
         }
+
         break;
       }
 
@@ -227,6 +232,7 @@
             }
 
             const t = at(rr, cc);
+
             if (!t && wantMoves)
             {
               moves.push({ r: rr, c: cc });
@@ -237,30 +243,31 @@
             }
           }
         }
+
         break;
       }
 
       case "B":
       {
         const res = sliding(r, c, color, [[-1,-1],[-1,1],[1,-1],[1,1]]);
-        moves = res.moves;
-        attacks = res.attacks;
+        if (wantMoves) { moves = res.moves; }
+        if (wantAttacks) { attacks = res.attacks; }
         break;
       }
 
       case "R":
       {
         const res = sliding(r, c, color, [[-1,0],[1,0],[0,-1],[0,1]]);
-        moves = res.moves;
-        attacks = res.attacks;
+        if (wantMoves) { moves = res.moves; }
+        if (wantAttacks) { attacks = res.attacks; }
         break;
       }
 
       case "Q":
       {
         const res = sliding(r, c, color, [[-1,-1],[-1,1],[1,-1],[1,1],[-1,0],[1,0],[0,-1],[0,1]]);
-        moves = res.moves;
-        attacks = res.attacks;
+        if (wantMoves) { moves = res.moves; }
+        if (wantAttacks) { attacks = res.attacks; }
         break;
       }
 
@@ -270,6 +277,7 @@
         const one = [r + dir, c];
         const two = [r + 2 * dir, c];
 
+        // Forward pushes
         if (wantMoves)
         {
           if (inBounds(...one) && !at(...one))
@@ -277,6 +285,7 @@
             moves.push({ r: one[0], c: one[1] });
 
             const startRow = (color === W) ? 6 : 1;
+
             if (r === startRow && inBounds(...two) && !at(...two))
             {
               moves.push({ r: two[0], c: two[1] });
@@ -284,6 +293,7 @@
           }
         }
 
+        // Captures (regular + en passant)
         if (wantAttacks)
         {
           for (const dc of [-1, 1])
@@ -297,7 +307,25 @@
             }
 
             const t = at(rr, cc);
+
+            // Normal diagonal capture
             if (t && t.color !== color)
+            {
+              attacks.push({ r: rr, c: cc });
+              continue;
+            }
+
+            // En passant: empty target square matches stored EP square
+            const ep = boardState.enPassant;
+
+            if
+            (
+              !t &&
+              ep &&
+              ep.by === color &&
+              rr === ep.r &&
+              cc === ep.c
+            )
             {
               attacks.push({ r: rr, c: cc });
             }
@@ -329,7 +357,6 @@
 
     if (!p || p.color !== boardState.turn)
     {
-      // Not selectable
       boardState.selected = null;
       boardState.legal.moves.clear();
       boardState.legal.attacks.clear();
@@ -340,6 +367,7 @@
     boardState.selected = { r, c };
 
     const res = highlights(r, c, "both");
+
     boardState.legal.moves = new Set(res.moves.map((m) => keyOf(m.r, m.c)));
     boardState.legal.attacks = new Set(res.attacks.map((a) => keyOf(a.r, a.c)));
 
@@ -348,35 +376,262 @@
 
   function makeMove(sr, sc, dr, dc)
   {
+    // If a promotion dialog is open, ignore board clicks
+    if (boardState.promotion)
+    {
+      return;
+    }
+
     const moving = at(sr, sc);
     const target = at(dr, dc);
 
-    // Move / capture
-    setAt(dr, dc, moving);
-    setAt(sr, sc, null);
+    // Detect en passant capture BEFORE altering the grid
+    let usedEnPassant = false;
 
-    // Pawn promotion (auto-queen)
-    if (moving && moving.kind === "P")
+    if
+    (
+      moving &&
+      moving.kind === "P" &&
+      !target &&
+      boardState.enPassant &&
+      boardState.enPassant.by === boardState.turn &&
+      dr === boardState.enPassant.r &&
+      dc === boardState.enPassant.c
+    )
     {
-      if ((moving.color === W && dr === 0) || (moving.color === B && dr === 7))
+      const victim = boardState.enPassant.capturedAt;
+
+      if (victim && at(victim.r, victim.c))
       {
-        moving.kind = "Q";
+        setAt(victim.r, victim.c, null);
+        usedEnPassant = true;
       }
     }
 
-    // Record last move
+    // Execute move (normal or EP)
+    setAt(dr, dc, moving);
+    setAt(sr, sc, null);
+
+    // Record last move (safe to set now)
     boardState.lastMove = { from: { r: sr, c: sc }, to: { r: dr, c: dc } };
 
-    // Swap turn
+    // Update en passant state for next move
+    if (moving && moving.kind === "P" && Math.abs(dr - sr) === 2 && !usedEnPassant)
+    {
+      const dir = (moving.color === W) ? -1 : 1;
+
+      boardState.enPassant =
+      {
+        r: sr + dir,                 // the square the pawn "passed" over
+        c: sc,
+        by: (moving.color === W) ? B : W,
+        capturedAt: { r: dr, c: dc } // where the double-step pawn currently sits
+      };
+    }
+    else
+    {
+      boardState.enPassant = null;
+    }
+
+    // Promotion check (no auto-queen)
+    if (moving && moving.kind === "P" && ((moving.color === W && dr === 0) || (moving.color === B && dr === 7)))
+    {
+      // Lock UI and show choices above the pawn on (dr, dc)
+      beginPromotion(dr, dc, moving.color);
+
+      // Clear selection while waiting
+      boardState.selected = null;
+      boardState.legal.moves.clear();
+      boardState.legal.attacks.clear();
+
+      // Re-render board so pawn is visually on the last rank under the popup
+      renderBoard();
+
+      // IMPORTANT: Do NOT swap turn yet; move is incomplete until a piece is chosen
+      return;
+    }
+
+    // Otherwise, normal move completion
     boardState.turn = (boardState.turn === W) ? B : W;
 
-    // Clear selection
     boardState.selected = null;
     boardState.legal.moves.clear();
     boardState.legal.attacks.clear();
 
-    // Re-render
     renderBoard();
+  }
+
+  // ---- Promotion UI ----
+  function beginPromotion(r, c, color)
+  {
+    // Create backdrop to block clicks
+    const backdrop = document.createElement("div");
+    backdrop.className = "promotion-backdrop";
+
+    // Create popup
+    const popup = document.createElement("div");
+    popup.className = "promotion-popup";
+
+    // Title (optional small label)
+    const label = document.createElement("div");
+    label.className = "promotion-label";
+    label.textContent = "Promote to:";
+    popup.appendChild(label);
+
+    // Choices row
+    const row = document.createElement("div");
+    row.className = "promotion-row";
+
+    for (const k of PROMOTION_KINDS)
+    {
+      const img = document.createElement("img");
+      img.className = "promotion-choice";
+
+      // compute src from current theme
+      const theme = pieceThemeEl.value;
+      const letter = kindToLetter[k];
+      img.src = `${ROOT}/pieces/${theme}/${color}${letter}.png`;
+      img.alt = `${color}${letter}`;
+      img.setAttribute("data-kind", k);
+
+      img.addEventListener("click", () =>
+      {
+        finishPromotion(r, c, k);
+      });
+
+      row.appendChild(img);
+    }
+
+    popup.appendChild(row);
+
+    document.body.appendChild(backdrop);
+    document.body.appendChild(popup);
+
+    // Position the popup above the target square (clamped to viewport)
+    positionPromotionPopup(popup, r, c);
+
+    boardState.promotion =
+    {
+      r,
+      c,
+      color,
+      popupEl: popup,
+      backdropEl: backdrop
+    };
+  }
+
+  function refreshPromotionPopupImages()
+  {
+    if (!boardState.promotion)
+    {
+      return;
+    }
+
+    const { color, popupEl } = boardState.promotion;
+
+    if (!popupEl)
+    {
+      return;
+    }
+
+    const theme = pieceThemeEl.value;
+
+    popupEl.querySelectorAll(".promotion-choice").forEach((img) =>
+    {
+      const k = img.getAttribute("data-kind");
+      const letter = kindToLetter[k];
+      img.src = `${ROOT}/pieces/${theme}/${color}${letter}.png`;
+      img.alt = `${color}${letter}`;
+    });
+  }
+
+  function positionPromotionPopup(popup, r, c)
+  {
+    const sq = querySquare(r, c);
+
+    if (!sq)
+    {
+      // fallback to center
+      popup.style.position = "absolute";
+      popup.style.left = "50%";
+      popup.style.top = "20px";
+      popup.style.transform = "translateX(-50%)";
+      popup.style.zIndex = "9999";
+      return;
+    }
+
+    const rect = sq.getBoundingClientRect();
+    document.body.appendChild(popup); // ensure it has size
+
+    // Measure popup
+    const pw = popup.offsetWidth;
+    const ph = popup.offsetHeight;
+
+    // Desired: centered horizontally, **above** square by 8px
+    let left = rect.left + window.scrollX + (rect.width / 2) - (pw / 2);
+    let top  = rect.top + window.scrollY - ph - 8;
+
+    // Clamp to viewport padding
+    const pad = 8;
+    const minLeft = window.scrollX + pad;
+    const maxLeft = window.scrollX + document.documentElement.clientWidth - pw - pad;
+
+    if (left < minLeft) left = minLeft;
+    if (left > maxLeft) left = maxLeft;
+
+    // If off the top, nudge below the square instead
+    const minTop = window.scrollY + pad;
+
+    if (top < minTop)
+    {
+      top = rect.bottom + window.scrollY + 8;
+    }
+
+    popup.style.position = "absolute";
+    popup.style.left = `${left}px`;
+    popup.style.top = `${top}px`;
+    popup.style.zIndex = "10000";
+  }
+
+  function finishPromotion(r, c, toKind)
+  {
+    const piece = at(r, c);
+
+    if (!piece || piece.kind !== "P")
+    {
+      cleanupPromotionUI();
+      return;
+    }
+
+    piece.kind = toKind;
+
+    // Clear promotion UI + state
+    cleanupPromotionUI();
+
+    // Completing the move: now swap turn
+    boardState.turn = (boardState.turn === W) ? B : W;
+
+    // Clear selection buffers
+    boardState.selected = null;
+    boardState.legal.moves.clear();
+    boardState.legal.attacks.clear();
+
+    // EP is irrelevant now
+    boardState.enPassant = null;
+
+    renderBoard();
+  }
+
+  function cleanupPromotionUI()
+  {
+    const p = boardState.promotion;
+
+    if (!p) return;
+
+    if (p.popupEl && p.popupEl.parentNode) p.popupEl.parentNode.removeChild(p.popupEl);
+    if (p.backdropEl && p.backdropEl.parentNode) p.backdropEl.parentNode.removeChild(p.backdropEl);
+
+    boardState.promotion = null;
   }
 
   // ---- UI rendering ----
@@ -394,6 +649,7 @@
         sq.dataset.col = c;
 
         const p = at(r, c);
+
         if (p)
         {
           const img = document.createElement("img");
@@ -408,10 +664,8 @@
       }
     }
 
-    // Apply current piece set to image srcs
     applyPieceTheme(pieceThemeEl.value);
 
-    // Last-move highlight
     if (boardState.lastMove)
     {
       const { from, to } = boardState.lastMove;
@@ -422,11 +676,25 @@
       b && b.classList.add("last-move");
     }
 
-    // Update turn indicator
     const turnEl = document.getElementById("turnIndicator");
+
     if (turnEl)
     {
-      turnEl.textContent = (boardState.turn === W) ? "Turn: White" : "Turn: Black";
+      // If promotion UI is open, it’s still the current player’s move
+      const t = (boardState.turn === W) ? "Turn: White" : "Turn: Black";
+      turnEl.textContent = t;
+    }
+
+    // If something is selected, redraw targets (respects Mode dropdown)
+    if (boardState.selected)
+    {
+      drawSelectionAndTargets(boardState.selected.r, boardState.selected.c);
+    }
+
+    // If promotion popup is open, re-position it (in case layout changed)
+    if (boardState.promotion && boardState.promotion.popupEl)
+    {
+      positionPromotionPopup(boardState.promotion.popupEl, boardState.promotion.r, boardState.promotion.c);
     }
   }
 
@@ -450,16 +718,22 @@
     const origin = querySquare(r, c);
     origin && origin.classList.add("highlight-selected");
 
+    const mode = (modeEl && modeEl.value) || "both";
+    const showMoves = mode === "both" || mode === "moves";
+    const showAttacks = mode === "both" || mode === "attacks";
+
     document.querySelectorAll(".square").forEach((s) =>
     {
-      const key = keyOf(parseInt(s.dataset.row, 10), parseInt(s.dataset.col, 10));
+      const rr = parseInt(s.dataset.row, 10);
+      const cc = parseInt(s.dataset.col, 10);
+      const key = keyOf(rr, cc);
 
-      if (boardState.legal.moves.has(key))
+      if (showMoves && boardState.legal.moves.has(key))
       {
         s.classList.add("highlight-move");
       }
 
-      if (boardState.legal.attacks.has(key))
+      if (showAttacks && boardState.legal.attacks.has(key))
       {
         s.classList.add("highlight-attack");
       }
@@ -468,18 +742,22 @@
 
   function onClickSquare(ev)
   {
+    // Ignore board clicks while promotion UI is open
+    if (boardState.promotion)
+    {
+      return;
+    }
+
     const sq = ev.currentTarget;
     const r = parseInt(sq.dataset.row, 10);
     const c = parseInt(sq.dataset.col, 10);
 
-    // If we have a selection and the click is a legal target, perform the move.
     if (boardState.selected && isLegalTarget(r, c))
     {
       makeMove(boardState.selected.r, boardState.selected.c, r, c);
       return;
     }
 
-    // Otherwise, (re)select if it is our turn's piece.
     const p = at(r, c);
 
     if (p && p.color === boardState.turn)
@@ -532,20 +810,38 @@
       pieceThemeEl.value = savedPieces;
     }
 
-    pieceThemeEl.addEventListener("change", () => applyPieceTheme(pieceThemeEl.value));
+    pieceThemeEl.addEventListener("change", () =>
+    {
+      applyPieceTheme(pieceThemeEl.value);
+    });
 
-    // Reset button
+    // Mode change only affects drawing (legality is both)
+    if (modeEl)
+    {
+      modeEl.addEventListener("change", () =>
+      {
+        if (boardState.selected)
+        {
+          drawSelectionAndTargets(boardState.selected.r, boardState.selected.c);
+        }
+      });
+    }
+
+    // Reset button (if present)
     const resetBtn = document.getElementById("resetBtn");
+
     if (resetBtn)
     {
       resetBtn.addEventListener("click", () =>
       {
+        cleanupPromotionUI();
         boardState.grid = startingPosition();
         boardState.turn = W;
         boardState.selected = null;
         boardState.legal.moves.clear();
         boardState.legal.attacks.clear();
         boardState.lastMove = null;
+        boardState.enPassant = null;
         renderBoard();
       });
     }
@@ -554,7 +850,6 @@
   // ---- Initial render ----
   renderBoard();
 
-  // Re-apply persisted piece theme now that images exist
   const savedPieces = (() =>
   {
     try { return localStorage.getItem("pieceTheme"); }
