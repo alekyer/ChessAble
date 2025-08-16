@@ -8,6 +8,62 @@
   const attackColorEl = document.getElementById("attackColor");
   const boardThemeEl = document.getElementById("boardTheme");
   const pieceThemeEl = document.getElementById("pieceTheme");
+  const themeToggle = document.getElementById("themeToggle");
+  const THEME_KEY = "theme";
+
+  (function initTheme()
+  {
+    let saved = null;
+
+    try
+    {
+      saved = localStorage.getItem(THEME_KEY);
+    }
+    catch (_)
+    {
+      saved = null;
+    }
+
+    const root = document.documentElement;
+    const setAria = () =>
+    {
+      if (!themeToggle)
+      {
+        return;
+      }
+
+      const isDark = root.classList.contains("theme-dark");
+      themeToggle.setAttribute("aria-pressed", isDark ? "true" : "false");
+    };
+
+    if (saved === "dark")
+    {
+      root.classList.add("theme-dark");
+    }
+
+    setAria();
+
+    if (themeToggle)
+    {
+      themeToggle.addEventListener("click", () =>
+      {
+        root.classList.toggle("theme-dark");
+
+        const isDark =
+          root.classList.contains("theme-dark");
+
+        try
+        {
+          localStorage.setItem(THEME_KEY, isDark ? "dark" : "light");
+        }
+        catch (_)
+        {}
+
+        setAria();
+      });
+    }
+  })();
+
 
   const kindToLetter = { K:"k", Q:"q", R:"r", B:"b", N:"n", P:"p" };
   const PROMOTION_KINDS = [ "Q", "R", "B", "N" ];
@@ -473,10 +529,10 @@
     popup.className = "promotion-popup";
 
     // Title (optional small label)
-    const label = document.createElement("div");
-    label.className = "promotion-label";
-    label.textContent = "Promote to:";
-    popup.appendChild(label);
+    //const label = document.createElement("div");
+    //label.className = "promotion-label";
+    //label.textContent = "Promote to:";
+    //popup.appendChild(label);
 
     // Choices row
     const row = document.createElement("div");
@@ -557,6 +613,7 @@
       popup.style.top = "20px";
       popup.style.transform = "translateX(-50%)";
       popup.style.zIndex = "9999";
+      // popup.style.zIndex = "9999"
       return;
     }
 

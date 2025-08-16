@@ -5,50 +5,351 @@
 
 html, body
 {
-  margin: 0; padding: 0; font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+  margin: 0;
+  padding: 0;
+  font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
 }
+
+/* =======================
+   Theme tokens + layout
+   ======================= */
 
 :root
 {
+  --sidebar-width: 320px;
+
+  --bg: #f6f7fb;
+  --text: #1d1f23;
+  --muted: #525a68;
+
+  --surface: #ffffff;
+  --surface-2: #f0f2f7;
+  --border: rgba(0,0,0,0.12);
+
+  --accent: #3a7afe;
+
   --move-glow: #00adff;
   --attack-glow: #ff4040;
   --select-glow: #ffd500;
 
-  /* Board background image is set via JS: url(/boards/xxx.png) */
   --board-bg: none;
+
+  /* Bulb glow */
+  --bulb-on-color: #ffd54a;
+  --bulb-on-glow-inner: rgba(255, 231, 150, 0.95);
+  --bulb-on-glow-mid:   rgba(255, 223, 120, 0.55);
+  --bulb-on-glow-outer: rgba(255, 210, 80,  0.15);
+
+  /* Promotion frosted */
+  --promo-bg: rgba(24, 24, 28, 0.45);
+  --promo-blur: 14px;
+  --promo-border: 1px solid rgba(255,255,255,0.18);
+  --promo-shadow: 0 12px 30px rgba(0,0,0,0.35);
+  --promo-backdrop-blur: 2.5px;
+  --promo-backdrop-dim: rgba(0,0,0,0.18);
 }
 
-header, .controls, footer
+/* Dark mode overrides */
+.theme-dark
 {
-  max-width: 720px;
-  margin: 12px auto;
-  padding: 0 12px;
+  --bg: #0f1217;
+  --text: #e7eaf0;
+  --muted: #a7b1c2;
+
+  --surface: #161a22;
+  --surface-2: #11151c;
+  --border: rgba(255,255,255,0.12);
+
+  --accent: #7aa2ff;
 }
 
-.controls label
+body
 {
-  margin-right: 12px; display: inline-flex; align-items: center; gap: 6px;
+  background: var(--bg);
+  color: var(--text);
 }
 
+/* =======================
+   Corner title + bulb
+   ======================= */
+
+.brand-float
+{
+  position: fixed;
+  top: 12px;
+  left: 14px;
+  margin: 0;
+  font-size: 48px;
+  letter-spacing: 0.5px;
+  font-weight: 800;
+  color: var(--text);
+  z-index: 100;
+  user-select: none;
+}
+
+.icon-btn
+{
+  display: inline-grid;
+  place-items: center;
+  width: 54px;
+  height: 54px;
+  border-radius: 10px;
+  border: none;
+  background: var(--surface);
+  color: var(--text);
+  cursor: pointer;
+  transition: transform 0.12s ease, box-shadow 0.12s ease, background 0.12s ease;
+}
+
+.icon-btn:hover
+{
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(0,0,0,0.15);
+}
+
+.icon
+{
+  display: block;
+}
+
+.bulb
+{
+  position: relative;
+  overflow: visible;
+}
+
+.bulb-float
+{
+  position: fixed;
+  top: 12px;
+  right: 14px;
+  z-index: 100;
+}
+
+/* Default (light): OFF visible, ON hidden */
+.bulb .bulb-off
+{
+  display: block;
+}
+
+.bulb .bulb-on
+{
+  display: none;
+  fill: var(--bulb-on-color);
+  color: var(--bulb-on-color);
+}
+
+/* Dark: ON visible + glow, OFF hidden */
+.theme-dark .bulb .bulb-off
+{
+  display: none;
+}
+
+.theme-dark .bulb .bulb-on
+{
+  display: block;
+  filter: drop-shadow(0 0 4px var(--bulb-on-glow-inner))
+          drop-shadow(0 0 10px var(--bulb-on-glow-mid));
+}
+
+.theme-dark .icon-btn.bulb::after
+{
+  content: "";
+  position: absolute;
+  inset: -8px;
+  border-radius: 12px;
+  pointer-events: none;
+  background:
+    radial-gradient(ellipse at center,
+      var(--bulb-on-glow-inner) 0%,
+      var(--bulb-on-glow-mid) 35%,
+      var(--bulb-on-glow-outer) 70%,
+      transparent 85%);
+  filter: blur(2px);
+  animation: bulb-glow 1.2s ease-out both;
+}
+
+@keyframes bulb-glow
+{
+  from
+  {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+
+  to
+  {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* =======================
+   Layout: LEFT options, CENTER board
+   ======================= */
+
+.layout
+{
+  display: grid;
+  grid-template-columns: var(--sidebar-width) 1fr;
+  gap: 16px;
+  padding: 16px;
+  padding-top: 56px; /* leave breathing room under floating controls */
+}
+
+/* Options panel (left) */
+.sidebar
+{
+  display: block;
+}
+
+.panel
+{
+  position: sticky;
+  top: 11%;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 14px;
+  box-shadow: 0 10px 24px rgba(0,0,0,0.1);
+}
+
+.panel-title
+{
+  margin: 0 0 8px 0;
+  font-size: 26px;
+  color: var(--muted);
+  font-weight: 700;
+  letter-spacing: 0.4px;
+}
+
+.control
+{
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 6px;
+  margin: 10px 0 12px;
+}
+
+.control-row
+{
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 10px;
+}
+
+label
+{
+  font-size: 13px;
+  color: var(--muted);
+}
+
+select,
+input[type="color"],
+.btn
+{
+  font: inherit;
+  color: var(--text);
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 8px 10px;
+}
+
+input[type="color"]
+{
+  padding: 2px;
+  height: 36px;
+}
+
+.btn
+{
+  cursor: pointer;
+  background: var(--surface);
+  transition: transform 0.12s ease, box-shadow 0.12s ease, background 0.12s ease;
+}
+
+.btn:hover
+{
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(0,0,0,0.15);
+}
+
+.turn-indicator
+{
+  font-weight: 700;
+}
+
+.hint
+{
+  margin: 14px 2px 2px;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+/* Board region (center) */
+.center
+{
+  display: grid;
+  place-items: center;
+  min-height: calc(100vh - 110px);
+}
+
+/* Centered, max-size board */
 .board
 {
-  width: min(92vw, 640px);
+  width: min(
+    calc(100vh - 120px),                 /* viewport height minus padding & floats */
+    calc(100vw - var(--sidebar-width) - 48px)
+  );
+
   aspect-ratio: 1 / 1;
-  margin: 12px auto 28px;
   display: grid;
   grid-template-columns: repeat(8, 1fr);
   grid-template-rows: repeat(8, 1fr);
   border: 6px solid #333;
-  border-radius: 8px;
+  border-radius: 12px;
   overflow: hidden;
   background-image: var(--board-bg);
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
   position: relative;
+  box-shadow: 0 10px 28px rgba(0,0,0,0.25);
 }
 
-/* Transparent squares */
+/* Responsive: stack options under board */
+@media (max-width: 900px)
+{
+  :root
+  {
+    --sidebar-width: 0px;
+  }
+
+  .layout
+  {
+    grid-template-columns: 1fr;
+    padding-top: 64px;
+  }
+
+  .panel
+  {
+    margin-top: 8px;
+    position: static;
+  }
+
+  .board
+  {
+    width: min(92vw, calc(100vh - 140px));
+  }
+}
+
+/* =======================
+   Squares / pieces / glow
+   ======================= */
+
 .square
 {
   position: relative;
@@ -63,20 +364,29 @@ header, .controls, footer
   outline: 1px solid rgba(0,0,0,0.08);
   outline-offset: -1px;
 }
+
 .square:hover
 {
   filter: brightness(1.05);
 }
 
-/* Piece images */
+/* Piece images with JS-provided vars */
 .piece-img
 {
-  width: 85%;
-  height: 85%;
+  width: calc(115% * var(--piece-scale, 1));
+  height: calc(115% * var(--piece-scale, 1));
   object-fit: contain;
-  pointer-events: none; /* allow square to receive the click */
+  pointer-events: none;
   image-rendering: auto;
-  filter: drop-shadow(0 0 1px rgba(0,0,0,0.6));
+  transform: translateY(var(--piece-offset-y, 0px));
+  filter: var(--piece-drop-shadow, drop-shadow(0 0 1px rgba(0,0,0,0.6)));
+}
+
+/* Pixel art crisping for 8_bit set */
+.pixelated .piece-img
+{
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
 }
 
 /* Glow highlights */
@@ -93,15 +403,145 @@ header, .controls, footer
 
 .highlight-move::after
 {
-  box-shadow: 0 0 10px var(--move-glow), 0 0 22px var(--move-glow), inset 0 0 10px var(--move-glow);
+  box-shadow:
+    0 0 10px var(--move-glow),
+    0 0 22px var(--move-glow),
+    inset 0 0 10px var(--move-glow);
 }
 
 .highlight-attack::after
 {
-  box-shadow: 0 0 10px var(--attack-glow), 0 0 22px var(--attack-glow), inset 0 0 10px var(--attack-glow);
+  box-shadow:
+    0 0 10px var(--attack-glow),
+    0 0 22px var(--attack-glow),
+    inset 0 0 10px var(--attack-glow);
 }
 
 .highlight-selected::after
 {
-  box-shadow: 0 0 10px var(--select-glow), 0 0 22px var(--select-glow), inset 0 0 10px var(--select-glow);
+  box-shadow:
+    0 0 10px var(--select-glow),
+    0 0 22px var(--select-glow),
+    inset 0 0 10px var(--select-glow);
+}
+
+/* =======================
+   Promotion UI (frosted)
+   ======================= */
+
+.promotion-backdrop
+{
+  position: fixed;
+  inset: 0;
+  background: var(--promo-backdrop-dim);
+  backdrop-filter: blur(var(--promo-backdrop-blur)) saturate(0.9);
+  -webkit-backdrop-filter: blur(var(--promo-backdrop-blur)) saturate(0.9);
+  z-index: 9998;
+}
+
+.promotion-popup
+{
+  position: absolute;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: var(--promo-bg);
+  backdrop-filter: blur(var(--promo-blur)) saturate(1.1);
+  -webkit-backdrop-filter: blur(var(--promo-blur)) saturate(1.1);
+  border: var(--promo-border);
+  box-shadow: var(--promo-shadow);
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  z-index: 10000;
+  animation: promo-in 120ms ease-out;
+}
+
+.promotion-label
+{
+  color: #fff;
+  font-size: 12px;
+  letter-spacing: 0.3px;
+  opacity: 0.95;
+  user-select: none;
+  margin-bottom: 2px;
+}
+
+.promotion-row
+{
+  display: inline-flex;
+  gap: 8px;
+}
+
+.promotion-choice
+{
+  position: relative;
+  width: 84px;
+  height: 84px;
+  object-fit: contain;
+  border-radius: 10px;
+  filter: drop-shadow(0 0 1px rgba(0,0,0,0.6));
+  box-shadow: 0 0 0 0 rgba(255,255,255,0);
+  cursor: pointer;
+  transition: transform 0.12s ease, filter 0.12s ease, box-shadow 0.12s ease;
+  outline: none;
+}
+
+.promotion-choice:hover,
+.promotion-choice:focus-visible
+{
+  transform: translateY(-1px) scale(1.08);
+  filter: drop-shadow(0 2px 6px rgba(0,0,0,0.55));
+  box-shadow:
+    0 0 0 2px rgba(255,255,255,0.35),
+    0 0 12px rgba(255,255,255,0.55);
+}
+
+.promotion-choice:active
+{
+  transform: translateY(0) scale(1.02);
+  box-shadow:
+    0 0 0 2px rgba(255,255,255,0.45),
+    0 0 10px rgba(255,255,255,0.6);
+}
+
+@keyframes promo-in
+{
+  from
+  {
+    transform: translateY(-4px);
+    opacity: 0;
+  }
+
+  to
+  {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce)
+{
+  .promotion-popup
+  {
+    animation: none;
+  }
+
+  .promotion-choice
+  {
+    transition: none;
+  }
+}
+
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px)))
+{
+  .promotion-backdrop
+  {
+    background: rgba(0,0,0,0.35);
+  }
+
+  .promotion-popup
+  {
+    background: rgba(24,24,28,0.92);
+  }
 }

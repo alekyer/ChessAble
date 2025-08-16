@@ -3,118 +3,165 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Chess Attack Visualizer — Static</title>
+  <title>ChessAble</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <header>
-    <h1>Chess Attack Visualizer</h1>
-    <p>Click any piece to see its <strong>moves</strong> and <strong>attacks</strong>. Customize glow, board theme, and piece set.</p>
-  </header>
+  <!-- Corner title (top-left) -->
+  <h1 class="brand-float">ChessAble</h1>
 
-  <section class="controls">
-    <label>Mode:
-      <select id="mode">
-        <option value="both" selected>Moves + Attacks</option>
-        <option value="moves">Moves only</option>
-        <option value="attacks">Attacks only</option>
-      </select>
-    </label>
+  <!-- Corner theme toggle (top-right) -->
+  <button id="themeToggle"
+          class="icon-btn bulb bulb-float"
+          aria-label="Toggle dark mode"
+          aria-pressed="false"
+          title="Toggle theme">
+    <!-- OFF (outline) -->
+    <svg class="icon bulb-off"
+         viewBox="0 0 24 24"
+         width="22"
+         height="22"
+         fill="none"
+         stroke="currentColor"
+         stroke-width="1.8"
+         stroke-linecap="round"
+         stroke-linejoin="round"
+         aria-hidden="true">
+      <path d="M12 2a7 7 0 0 1 7 7c0 2.4-1.2 4.5-3.0 5.7c-1.0.7-1.6 1.6-1.9 2.3H9.9c-.3-.7-.9-1.6-1.9-2.3C6.2 13.5 5 11.4 5 9a7 7 0 0 1 7-7z"/>
+      <path d="M9 21h6v-1a3 3 0 0 0-3-3a3 3 0 0 0-3 3v1z"/>
+    </svg>
 
-    <label>Move glow:
-      <input type="color" id="moveColor" value="#00adff" />
-    </label>
+    <!-- ON (filled) -->
+    <svg class="icon bulb-on"
+         viewBox="0 0 24 24"
+         width="22"
+         height="22"
+         aria-hidden="true">
+      <path d="M12 2a7 7 0 0 1 7 7c0 2.4-1.2 4.5-3.0 5.7c-1.0.7-1.6 1.6-1.9 2.3H9.9c-.3-.7-.9-1.6-1.9-2.3C6.2 13.5 5 11.4 5 9a7 7 0 0 1 7-7z"/>
+      <path d="M9 21h6v-1a3 3 0 0 0-3-3a3 3 0 0 0-3 3v1z"/>
+    </svg>
+  </button>
 
-    <label>Attack glow:
-      <input type="color" id="attackColor" value="#ff4040" />
-    </label>
+  <!-- Two-column layout: LEFT options, CENTER board -->
+  <div class="layout">
+    <aside class="sidebar">
+      <div class="panel">
+        <h2 class="panel-title">Options</h2>
 
-    <label>Board theme:
-      <select id="boardTheme">
-        <option>8_bit.png</option>
-        <option>bases.png</option>
-        <option>blue.png</option>
-        <option>brown.png</option>
-        <option>bubblegum.png</option>
-        <option>burled_wood.png</option>
-        <option>dark_wood.png</option>
-        <option>dash.png</option>
-        <option>glass.png</option>
-        <option>graffiti.png</option>
-        <option>green.png</option>
-        <option>icy_sea.png</option>
-        <option>light.png</option>
-        <option>lolz.png</option>
-        <option>marble.png</option>
-        <option>metal.png</option>
-        <option>neon.png</option>
-        <option>newspaper.png</option>
-        <option>orange.png</option>
-        <option>overlay.png</option>
-        <option>parchment.png</option>
-        <option>purple.png</option>
-        <option>red.png</option>
-        <option>sand.png</option>
-        <option>sky.png</option>
-        <option>stone.png</option>
-        <option>tan.png</option>
-        <option selected>tournament.png</option>
-        <option>translucent.png</option>
-        <option>walnut.png</option>
-      </select>
-    </label>
+        <div class="control">
+          <label for="mode">Mode</label>
+          <select id="mode">
+            <option value="both" selected>Moves + Attacks</option>
+            <option value="moves">Moves only</option>
+            <option value="attacks">Attacks only</option>
+          </select>
+        </div>
 
-    <label>Piece set:
-      <select id="pieceTheme">
-        <option>3d_chesskid</option>
-        <option>3d_plastic</option>
-        <option>3d_staunton</option>
-        <option>3d_wood</option>
-        <option>8_bit</option>
-        <option>alpha</option>
-        <option>bases</option>
-        <option>blindfold</option>
-        <option>book</option>
-        <option>bubblegum</option>
-        <option>cases</option>
-        <option>classic</option>
-        <option>club</option>
-        <option>condal</option>
-        <option>dash</option>
-        <option>game_room</option>
-        <option>glass</option>
-        <option>gothic</option>
-        <option>graffiti</option>
-        <option>icy_sea</option>
-        <option>light</option>
-        <option>lolz</option>
-        <option>marble</option>
-        <option>maya</option>
-        <option>metal</option>
-        <option>modern</option>
-        <option>nature</option>
-        <option selected>neo</option>
-        <option>neon</option>
-        <option>neo_wood</option>
-        <option>newspaper</option>
-        <option>ocean</option>
-        <option>sky</option>
-        <option>space</option>
-        <option>tigers</option>
-        <option>tournament</option>
-        <option>vintage</option>
-        <option>wood</option>
-      </select>
-    </label>
-  </section>
+        <div class="control">
+          <label for="moveColor">Move glow</label>
+          <input type="color" id="moveColor" value="#00adff" />
+        </div>
 
-  <main>
-    <div id="board" class="board"></div>
-  </main>
+        <div class="control">
+          <label for="attackColor">Attack glow</label>
+          <input type="color" id="attackColor" value="#ff4040" />
+        </div>
 
-  <footer>
-    <small>Static build. Engine ignores check/castling/en passant *for now*.</small>
-  </footer>
+        <div class="control">
+          <label for="boardTheme">Board theme</label>
+          <select id="boardTheme">
+            <option>8_bit.png</option>
+            <option>bases.png</option>
+            <option>blue.png</option>
+            <option>brown.png</option>
+            <option>bubblegum.png</option>
+            <option>burled_wood.png</option>
+            <option>dark_wood.png</option>
+            <option>dash.png</option>
+            <option>glass.png</option>
+            <option>graffiti.png</option>
+            <option>green.png</option>
+            <option>icy_sea.png</option>
+            <option>light.png</option>
+            <option>lolz.png</option>
+            <option>marble.png</option>
+            <option>metal.png</option>
+            <option>neon.png</option>
+            <option>newspaper.png</option>
+            <option>orange.png</option>
+            <option>overlay.png</option>
+            <option>parchment.png</option>
+            <option>purple.png</option>
+            <option>red.png</option>
+            <option>sand.png</option>
+            <option>sky.png</option>
+            <option>stone.png</option>
+            <option>tan.png</option>
+            <option selected>tournament.png</option>
+            <option>translucent.png</option>
+            <option>walnut.png</option>
+          </select>
+        </div>
+
+        <div class="control">
+          <label for="pieceTheme">Piece set</label>
+          <select id="pieceTheme">
+            <option>3d_chesskid</option>
+            <option>3d_plastic</option>
+            <option>3d_staunton</option>
+            <option>3d_wood</option>
+            <option>8_bit</option>
+            <option>alpha</option>
+            <option>bases</option>
+            <option>blindfold</option>
+            <option>book</option>
+            <option>bubblegum</option>
+            <option>cases</option>
+            <option>classic</option>
+            <option>club</option>
+            <option>condal</option>
+            <option>dash</option>
+            <option>game_room</option>
+            <option>glass</option>
+            <option>gothic</option>
+            <option>graffiti</option>
+            <option>icy_sea</option>
+            <option>light</option>
+            <option>lolz</option>
+            <option>marble</option>
+            <option>maya</option>
+            <option>metal</option>
+            <option>modern</option>
+            <option>nature</option>
+            <option selected>neo</option>
+            <option>neon</option>
+            <option>neo_wood</option>
+            <option>newspaper</option>
+            <option>ocean</option>
+            <option>sky</option>
+            <option>space</option>
+            <option>tigers</option>
+            <option>tournament</option>
+            <option>vintage</option>
+            <option>wood</option>
+          </select>
+        </div>
+
+        <div class="control-row">
+          <span id="turnIndicator" class="turn-indicator">Turn: White</span>
+          <button id="resetBtn" type="button" class="btn">Reset</button>
+        </div>
+
+        <p class="hint">
+          Static build. Engine ignores check/castling for now.
+        </p>
+      </div>
+    </aside>
+
+    <main class="center">
+      <div id="board" class="board"></div>
+    </main>
+  </div>
 
   <script src="app.js"></script>
 </body>
