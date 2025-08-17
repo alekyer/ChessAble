@@ -33,12 +33,17 @@ html, body
   --select-glow: #ffd500;
 
   --board-bg: none;
+  --board-rot: 0deg;     /* 0deg = White bottom, 180deg = Black bottom */
+  --piece-unrot: 0deg;   /* counter-rotation for piece images */
 
   /* Bulb glow */
   --bulb-on-color: #ffd54a;
   --bulb-on-glow-inner: rgba(255, 231, 150, 0.95);
   --bulb-on-glow-mid:   rgba(255, 223, 120, 0.55);
   --bulb-on-glow-outer: rgba(255, 210, 80,  0.15);
+  
+  /* Options button */
+  --options-icon: #000;   /* light mode: black */
 
   /* Promotion frosted */
   --promo-bg: rgba(24, 24, 28, 0.45);
@@ -61,6 +66,7 @@ html, body
   --border: rgba(255,255,255,0.12);
 
   --accent: #7aa2ff;
+  --options-icon: #fff;   /* dark mode: white */
 }
 
 body
@@ -76,10 +82,10 @@ body
 .brand-float
 {
   position: fixed;
-  top: 12px;
-  left: 14px;
+  top: 0%;
+  left: 0.5%;
   margin: 0;
-  font-size: 48px;
+  font-size: 55px;
   letter-spacing: 0.5px;
   font-weight: 800;
   color: var(--text);
@@ -103,7 +109,7 @@ body
 
 .icon-btn:hover
 {
-  transform: translateY(-1px);
+  transform:scale(1.2);
   box-shadow: 0 6px 16px rgba(0,0,0,0.15);
 }
 
@@ -191,7 +197,7 @@ body
 .layout
 {
   display: grid;
-  grid-template-columns: var(--sidebar-width) 1fr;
+  grid-template-columns:  1fr;
   gap: 16px;
   padding: 16px;
   padding-top: 56px; /* leave breathing room under floating controls */
@@ -200,17 +206,57 @@ body
 /* Options panel (left) */
 .sidebar
 {
-  display: block;
+  position: fixed;
+  left: 0;
+  top: 0;
+  height: 100vh;
+  width: var(--sidebar-width);
+  transform: translateX(-100%);
+  transition: transform 460ms ease;
+  z-index: 90;
+
+  /* panel visual */
+  background: var(--surface);
+  border-right: 1px solid var(--border);
+  box-shadow: 0 10px 24px rgba(0,0,0,0.1);
+  padding: 14px;
+  overflow: auto;
+}
+
+/* When open */
+.sidebar.is-open
+{
+  transform: translateX(0);
+}
+
+.side-dim
+{
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.28);
+/* backdrop-filter: blur(1px);
+  -webkit-backdrop-filter: blur(1px); */
+  z-index: 80;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 160ms ease;
+}
+
+.side-dim.show
+{
+  opacity: 1;
+  pointer-events: auto;
 }
 
 .panel
 {
-  position: sticky;
-  top: 11%;
+  position: relative;
+  top: 14.5%;
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: 14px;
   padding: 14px;
+  
   box-shadow: 0 10px 24px rgba(0,0,0,0.1);
 }
 
@@ -221,6 +267,29 @@ body
   color: var(--muted);
   font-weight: 700;
   letter-spacing: 0.4px;
+}
+
+.options-toggle
+{
+  position: fixed;
+  color: var(--options-icon);   /* icon color changes with theme */
+  top: 72px;
+  left: 14px;
+  z-index: 100;
+  width: 54px;
+  height: 54px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  border-radius: 10px;
+  display: inline-grid;
+  place-items: center;
+}
+
+.options-toggle .icon,
+.options-toggle .icon path
+{
+  fill: currentColor;
+  stroke: none;
 }
 
 .control
@@ -301,8 +370,8 @@ input[type="color"]
 .board
 {
   width: min(
-    calc(100vh - 120px),                 /* viewport height minus padding & floats */
-    calc(100vw - var(--sidebar-width) - 48px)
+    calc(100vh - 120px),  /* viewport height minus padding & floats */
+    92vw
   );
 
   aspect-ratio: 1 / 1;
@@ -318,6 +387,9 @@ input[type="color"]
   background-repeat: no-repeat;
   position: relative;
   box-shadow: 0 10px 28px rgba(0,0,0,0.25);
+  transform: rotate(var(--board-rot));
+  transform-origin: center;
+  transition: transform 1150ms ease;
 }
 
 /* Responsive: stack options under board */
@@ -378,7 +450,7 @@ input[type="color"]
   object-fit: contain;
   pointer-events: none;
   image-rendering: auto;
-  transform: translateY(var(--piece-offset-y, 0px));
+  transform: translateY(var(--piece-offset-y, 0px)) rotate(var(--piece-unrot));
   filter: var(--piece-drop-shadow, drop-shadow(0 0 1px rgba(0,0,0,0.6)));
 }
 

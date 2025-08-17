@@ -10,6 +10,62 @@
   const pieceThemeEl = document.getElementById("pieceTheme");
   const themeToggle = document.getElementById("themeToggle");
   const THEME_KEY = "theme";
+  // --- Sidebar (collapsible) ---
+  const optionsToggle = document.getElementById("optionsToggle");
+  const sidebarEl = document.querySelector(".sidebar");
+  const sideDimEl = document.getElementById("sideDim");
+  const SIDEBAR_KEY = "sidebarOpen";
+  const playerSideEl = document.getElementById("playerSide");
+  const SIDE_KEY = "playerSide";
+
+  function setSidebar(open)
+  {
+    if (!sidebarEl) return;
+
+    sidebarEl.classList.toggle("is-open", !!open);
+    optionsToggle && optionsToggle.setAttribute("aria-expanded", open ? "true" : "false");
+
+    if (sideDimEl)
+    {
+      sideDimEl.classList.toggle("show", !!open);
+    }
+
+    try
+    {
+      localStorage.setItem(SIDEBAR_KEY, open ? "1" : "0");
+    }
+    catch (_)
+    {}
+  }
+
+  // Restore last state (default closed)
+  (function initSidebar()
+  {
+    let open = false;
+
+    try
+    {
+      open = localStorage.getItem(SIDEBAR_KEY) === "1";
+    }
+    catch (_)
+    {}
+
+    setSidebar(open);
+
+    optionsToggle && optionsToggle.addEventListener("click", () =>
+    {
+      const nowOpen = !sidebarEl.classList.contains("is-open");
+      setSidebar(nowOpen);
+    });
+
+    sideDimEl && sideDimEl.addEventListener("click", () => setSidebar(false));
+
+    // Escape to close
+    document.addEventListener("keydown", (e) =>
+    {
+      if (e.key === "Escape") setSidebar(false);
+    });
+  })();
 
   (function initTheme()
   {
@@ -829,6 +885,21 @@
     boardState.legal.attacks.clear();
     clearHighlights();
   }
+  // ---- Player side choice ----
+    function applyPlayerSide(side)
+  {
+    const isBlack = (side === "black");
+    setCSSVar("--board-rot", isBlack ? "180deg" : "0deg");
+    setCSSVar("--piece-unrot", isBlack ? "180deg" : "0deg");
+
+    try
+    {
+      localStorage.setItem(SIDE_KEY, isBlack ? "black" : "white");
+    }
+    catch (_)
+    {}
+  }
+
 
   // ---- Controls init ----
   (function initControls()
@@ -871,6 +942,44 @@
     {
       applyPieceTheme(pieceThemeEl.value);
     });
+    
+    // Player side (bottom)
+    const savedSide = (() =>
+    {
+      try { return localStorage.getItem(SIDE_KEY); }
+      catch (_) { return null; }
+    })();
+
+    if (playerSideEl)
+    {
+      if (savedSide === "black" || savedSide === "white")
+      {
+        playerSideEl.value = savedSide;
+      }
+      // Ensure board orientation is applied on first paint
+      (function ensureSideOnLoad()
+      {
+        let side = "white";
+        try
+        {
+          const s = localStorage.getItem(SIDE_KEY);
+          if (s === "black") side = "black";
+        }
+        catch (_)
+        {}
+
+        applyPlayerSide(side);
+      })();
+
+      applyPlayerSide(playerSideEl.value);
+
+      playerSideEl.addEventListener("change", () =>
+      {
+        applyPlayerSide(playerSideEl.value);
+
+        renderBoard();
+      });
+    }
 
     // Mode change only affects drawing (legality is both)
     if (modeEl)
