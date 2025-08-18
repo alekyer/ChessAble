@@ -35,6 +35,10 @@ html, body
   --board-bg: none;
   --board-rot: 0deg;     /* 0deg = White bottom, 180deg = Black bottom */
   --piece-unrot: 0deg;   /* counter-rotation for piece images */
+  
+  /* Threat visuals */
+  --threat-you: rgba(0, 173, 255, 0.28);  /* blue */
+  --threat-opp: rgba(255, 64, 64, 0.28);  /* red  */
 
   /* Bulb glow */
   --bulb-on-color: #ffd54a;
@@ -418,6 +422,35 @@ input[type="color"]
   }
 }
 
+/* Threat layer: above board bg, below squares/pieces */
+.threat-layer
+{
+  position: absolute;
+  inset: 0;
+  display: grid;
+  grid-template-columns: repeat(8, 1fr);
+  grid-template-rows: repeat(8, 1fr);
+  z-index: 1;                 /* under .square */
+  pointer-events: none;       /* doesn't block clicks */
+}
+
+/* Each threat cell maps 1:1 to a square */
+.threat-cell
+{
+  position: relative;
+}
+
+/* Visuals: soft radial glow per side */
+.threat-you
+{
+  background: radial-gradient(closest-side, var(--threat-you) 120%, transparent 0%);
+}
+
+.threat-enemy
+{
+  background:  radial-gradient(closest-side, var(--threat-opp) 120%, transparent 0%);
+}
+
 /* =======================
    Squares / pieces / glow
    ======================= */
@@ -435,6 +468,7 @@ input[type="color"]
   transition: filter 0.12s ease;
   outline: 1px solid rgba(0,0,0,0.08);
   outline-offset: -1px;
+  z-index: 2;                 /* above .threat-layer !!! */
 }
 
 .square:hover
