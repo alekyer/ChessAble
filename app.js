@@ -751,121 +751,160 @@
 
   // ---- Threat compute----
   function controlSquares(r, c)
-{
-  const p = at(r, c);
-  if (!p) return [];
-  const out = [];
-  const color = p.color;
-
-  const rays = {
-    "B": [[-1,-1],[-1,1],[1,-1],[1,1]],
-    "R": [[-1,0],[1,0],[0,-1],[0,1]],
-    "Q": [[-1,-1],[-1,1],[1,-1],[1,1],[-1,0],[1,0],[0,-1],[0,1]]
-  };
-
-  switch (p.kind)
   {
-    case "N": {
-      const deltas = [[-2,-1],[-2,1],[-1,-2],[-1,2],[1,-2],[1,2],[2,-1],[2,1]];
-      for (const [dr,dc] of deltas) {
-        const rr = r + dr, cc = c + dc;
-        if (inBounds(rr,cc)) out.push({ r: rr, c: cc });
-      }
-      break;
-    }
+    const p = at(r, c);
+    if (!p) return [];
+    const out = [];
+    const color = p.color;
 
-    case "K": {
-      for (let dr = -1; dr <= 1; dr++) {
-        for (let dc = -1; dc <= 1; dc++) {
-          if (dr === 0 && dc === 0) continue;
+    const rays =
+    {
+      "B": [[-1,-1],[-1,1],[1,-1],[1,1]],
+      "R": [[-1,0],[1,0],[0,-1],[0,1]],
+      "Q": [[-1,-1],[-1,1],[1,-1],[1,1],[-1,0],[1,0],[0,-1],[0,1]]
+    };
+
+    switch (p.kind)
+    {
+      case "N":
+      {
+        const deltas = [[-2,-1],[-2,1],[-1,-2],[-1,2],[1,-2],[1,2],[2,-1],[2,1]];
+        for (const [dr,dc] of deltas)
+        {
           const rr = r + dr, cc = c + dc;
           if (inBounds(rr,cc)) out.push({ r: rr, c: cc });
         }
+        break;
       }
-      break;
-    }
 
-    case "B":
-    case "R":
-    case "Q": {
-      for (const [dr, dc] of rays[p.kind]) {
-        let rr = r + dr, cc = c + dc;
-        while (inBounds(rr, cc)) {
-          out.push({ r: rr, c: cc });
-          if (at(rr, cc)) break; // stop ray when any piece blocks
-          rr += dr; cc += dc;
-        }
-      }
-      break;
-    }
-
-    case "P": {
-      const dir = (color === "w") ? -1 : 1;
-      for (const dc of [-1, 1]) {
-        const rr = r + dir, cc = c + dc;
-        if (inBounds(rr,cc)) out.push({ r: rr, c: cc }); // pawns *control* diagonals even if empty
-      }
-      break;
-    }
-  }
-
-  return out;
-}
-
-  // ---- Threat compute----
-function computeThreatMaps()
-{
-  // Player bottom color (respects orientation control if present)
-  const bottomColor = (playerSideEl && playerSideEl.value === "black") ? B : W;
-
-  const mk = () => Array.from({ length: 8 }, () => Array(8).fill(0));
-  const yours = mk();
-  const enemy = mk();
-
-  for (let r = 0; r < 8; r++)
-    {
-      for (let c = 0; c < 8; c++)
+      case "K":
       {
-        const p = at(r, c);
-        if (!p) continue;
-
-        const ctrl = controlSquares(r, c);
-        for (const a of ctrl) {
-          if (p.color === bottomColor) {
-            yours[a.r][a.c] += 1;
-          } else {
-            enemy[a.r][a.c] += 1;
+        for (let dr = -1; dr <= 1; dr++)
+        {
+          for (let dc = -1; dc <= 1; dc++)
+          {
+            if (dr === 0 && dc === 0) continue;
+            const rr = r + dr, cc = c + dc;
+            if (inBounds(rr,cc)) out.push({ r: rr, c: cc });
           }
         }
+        break;
       }
-    }    
-    return { yours, enemy };
+
+      case "B":
+      case "R":
+      case "Q":
+      {
+        for (const [dr, dc] of rays[p.kind])
+        {
+          let rr = r + dr, cc = c + dc;
+          while (inBounds(rr, cc))
+          {
+            out.push({ r: rr, c: cc });
+            if (at(rr, cc)) break; // stop ray when any piece blocks
+            rr += dr; cc += dc;
+          }
+        }
+        break;
+      }
+
+      case "P":
+      {
+        const dir = (color === "w") ? -1 : 1;
+        for (const dc of [-1, 1])
+        {
+          const rr = r + dir, cc = c + dc;
+          if (inBounds(rr,cc)) out.push({ r: rr, c: cc }); // pawns *control* diagonals even if empty
+        }
+        break;
+      }
+    }
+    return out;
   }
 
-    // ---- Threat visualization----
-  function drawThreatOverlay(mode, maps)
+  // ---- Threat compute----
+  function computeThreatMaps()
   {
+    // Player bottom color (respects orientation control if present)
+    const bottomColor = (playerSideEl && playerSideEl.value === "black") ? B : W;
+
+    const mk = () => Array.from({ length: 8 }, () => Array(8).fill(0));
+    const yours = mk();
+    const enemy = mk();
+
+    for (let r = 0; r < 8; r++)
+      {
+        for (let c = 0; c < 8; c++)
+        {
+          const p = at(r, c);
+          if (!p) continue;
+
+          const ctrl = controlSquares(r, c);
+          for (const a of ctrl) {
+            if (p.color === bottomColor) {
+              yours[a.r][a.c] += 1;
+            } else {
+              enemy[a.r][a.c] += 1;
+            }
+          }
+        }
+      }    
+      return { yours, enemy };
+    }
+
+  // ---- Threat visualization----
+  function drawThreatOverlay(mode, maps) {
     const cells = boardEl.querySelectorAll(".threat-cell");
-    cells.forEach((cell) =>
-    {
+
+    cells.forEach((cell) => {
+      // reset any class-based visuals
       cell.classList.remove("threat-you", "threat-enemy");
+
       const r = parseInt(cell.dataset.row, 10);
       const c = parseInt(cell.dataset.col, 10);
 
-      const y = maps.yours[r][c];
-      const e = maps.enemy[r][c];
+      let y = maps.yours[r][c];   // player contributions
+      let e = maps.enemy[r][c];   // opponent contributions
 
-      if ((mode === "yours" || mode === "both") && y > 0)
-      {
-        cell.classList.add("threat-you");
+      // Respect toggle
+      if (mode === "yours") e = 0;
+      if (mode === "enemy") y = 0;
+
+      const total = y + e;
+
+      // Nothing controls this square: clear any previous gradient
+      if (!total) {
+        cell.style.backgroundImage = "";
+        return;
       }
 
-      if ((mode === "enemy" || mode === "both") && e > 0)
-      {
-        cell.classList.add("threat-enemy");
+      // Build N equal horizontal bands (N = total),
+      // first y bands blue, remaining e bands red.
+      const step = 100 / total;
+      const segments = [];
+      for (let i = 0; i < total; i++) {
+        const start = (i * step).toFixed(4) + "%";
+        const end   = ((i + 1) * step).toFixed(4) + "%";
+        const color = i < y ? "var(--threat-you)" : "var(--threat-opp)";
+        segments.push(`${color} ${start} ${end}`);
       }
+
+
+      // Color bands + thin horizontal divider at each step
+      const bands = `linear-gradient(to bottom, ${segments.join(",")})`;
+      const lines = `repeating-linear-gradient(
+        to bottom,
+        rgba(205, 205, 205, 1),
+        rgba(108, 108, 108, 1) 3px,
+        transparent 1px,
+        transparent ${step}%
+      )`;
+
+      cell.style.backgroundImage = `${bands}, ${lines}`;
+      cell.style.backgroundBlendMode = "normal";
     });
   }
+
 
   // ---- UI rendering ----
   function renderBoard()
