@@ -833,38 +833,42 @@
     const enemy = mk();
 
     for (let r = 0; r < 8; r++)
+    {
+      for (let c = 0; c < 8; c++)
       {
-        for (let c = 0; c < 8; c++)
-        {
-          const p = at(r, c);
-          if (!p) continue;
+        const p = at(r, c);
+        if (!p) continue;
 
-          const ctrl = controlSquares(r, c);
-          for (const a of ctrl) {
-            if (p.color === bottomColor) {
-              yours[a.r][a.c] += 1;
-            } else {
-              enemy[a.r][a.c] += 1;
-            }
+        const ctrl = controlSquares(r, c);
+        for (const a of ctrl)
+        {
+          if (p.color === bottomColor)
+          {
+            yours[a.r][a.c] += 1;
+          }
+          else
+          {
+            enemy[a.r][a.c] += 1;
           }
         }
-      }    
-      return { yours, enemy };
-    }
+      }
+    }    
+    return { yours, enemy };
+  }
 
   // ---- Threat visualization----
-  function drawThreatOverlay(mode, maps) {
+  function drawThreatOverlay(mode, maps)
+  {
     const cells = boardEl.querySelectorAll(".threat-cell");
 
     cells.forEach((cell) => {
-      // reset any class-based visuals
       cell.classList.remove("threat-you", "threat-enemy");
 
       const r = parseInt(cell.dataset.row, 10);
       const c = parseInt(cell.dataset.col, 10);
 
-      let y = maps.yours[r][c];   // player contributions
-      let e = maps.enemy[r][c];   // opponent contributions
+      let y = maps.yours[r][c];  // player contributions
+      let e = maps.enemy[r][c];  // opponent contributions
 
       // Respect toggle
       if (mode === "yours") e = 0;
@@ -872,38 +876,58 @@
 
       const total = y + e;
 
-      // Nothing controls this square: clear any previous gradient
-      if (!total) {
+      if (!total)
+      {
+        // clear previous backgrounds
         cell.style.backgroundImage = "";
+        cell.style.backgroundSize = "";
+        cell.style.backgroundPosition = "";
+        cell.style.backgroundRepeat = "";
+        cell.style.backgroundBlendMode = "";
         return;
       }
 
-      // Build N equal horizontal bands (N = total),
-      // first y bands blue, remaining e bands red.
+      // Build equal-height horizontal bands for total contributions.
       const step = 100 / total;
       const segments = [];
-      for (let i = 0; i < total; i++) {
+      for (let i = 0; i < total; i++)
+      {
         const start = (i * step).toFixed(4) + "%";
         const end   = ((i + 1) * step).toFixed(4) + "%";
         const color = i < y ? "var(--threat-you)" : "var(--threat-opp)";
         segments.push(`${color} ${start} ${end}`);
       }
 
-
-      // Color bands + thin horizontal divider at each step
+      // The band fill (only in the left slice)
       const bands = `linear-gradient(to bottom, ${segments.join(",")})`;
+
+      // Thin horizontal separators inside the slice (one per band)
       const lines = `repeating-linear-gradient(
         to bottom,
-        rgba(205, 205, 205, 1),
-        rgba(108, 108, 108, 1) 3px,
+        var(--threat-sep-color),
+        var(--threat-sep-color) 4px,
         transparent 1px,
         transparent ${step}%
       )`;
 
-      cell.style.backgroundImage = `${bands}, ${lines}`;
-      cell.style.backgroundBlendMode = "normal";
+      // Vertical separator at the right edge of the slice
+      const sep = `linear-gradient(
+        to right,
+        transparent calc(var(--threat-slice) - var(--threat-sep-thickness) / 2),
+        var(--threat-sep-color) calc(var(--threat-slice) - var(--threat-sep-thickness) / 2),
+        var(--threat-sep-color) calc(var(--threat-slice) + var(--threat-sep-thickness) / 2),
+        transparent calc(var(--threat-slice) + var(--threat-sep-thickness) / 2)
+      )`;
+
+      // Layer them: bands + lines confined to left slice; separator spans full cell
+      cell.style.backgroundImage = ` ${lines}, ${bands}, ${sep}`;
+      cell.style.backgroundSize = `var(--threat-slice) 100%, var(--threat-slice) 100%, 100% 100%`;
+      cell.style.backgroundPosition = `left top, left top, left top`;
+      cell.style.backgroundRepeat = `no-repeat, no-repeat, no-repeat`;
+      cell.style.backgroundBlendMode = `normal`;
     });
   }
+
 
 
   // ---- UI rendering ----

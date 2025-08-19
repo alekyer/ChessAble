@@ -37,8 +37,12 @@ html, body
   --piece-unrot: 0deg;   /* counter-rotation for piece images */
   
   /* Threat visuals */
-  --threat-you: rgba(0, 173, 255, 0.28);  /* blue */
-  --threat-opp: rgba(255, 64, 64, 0.28);  /* red  */
+  --threat-you: rgba(157, 224, 255, 0.88);  /* blue */
+  --threat-opp: rgba(255, 133, 133, 0.88);  /* red  */
+  --threat-slice: 15%;                 /* left strip width */
+  --threat-sep-color: rgb(111, 111, 111);
+  --threat-sep-thickness: 6px;
+
 
   /* Bulb glow */
   --bulb-on-color: #ffd54a;
@@ -71,6 +75,7 @@ html, body
 
   --accent: #7aa2ff;
   --options-icon: #fff;   /* dark mode: white */
+  --threat-sep-color: rgb(138, 138, 138);
 }
 
 body
