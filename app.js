@@ -1024,22 +1024,50 @@
 
   function drawInfluenceOverlay()
   {
-    const existing = boardEl.querySelector(".influence-layer");
-    if (!existing) return; // not built yet (renderBoard builds it)
+    const layer = boardEl.querySelector(".influence-layer");
+    if (!layer) return; // not built yet (renderBoard builds it)
 
-    // recompute
+    // recompute sources
     const { byYou, byEnemy } = computeInfluenceSources();
     const theme = pieceThemeEl.value;
 
-    // helper: build image src from theme/color/kind
+    // helper: only shrink if more than 5 icons must fit in one gutter
+    function adjustIconSize(container, count, cell)
+    {
+      // reset to default size (CSS --inf-size)
+      container.style.removeProperty("--inf-size");
+
+      if (count > 5)
+      {
+        const CONTAINER_PAD = 4;
+        const ICON_PAD = 0;     // was 3 when badges had padding; now 0 for aura
+        const GAP = 2;
+        const GUTTER_H = 0.42;
+
+        const cellW = cell.clientWidth;
+        const cellH = cell.clientHeight;
+
+        const availW = cellW - CONTAINER_PAD - GAP * (count - 1) - (ICON_PAD * 2) * count;
+        const sizeByWidth  = Math.floor(availW / Math.max(1, count));
+        const sizeByHeight = Math.floor(cellH * GUTTER_H) - CONTAINER_PAD - ICON_PAD * 2;
+
+        const final = Math.max(10, Math.min(sizeByWidth, sizeByHeight));
+        container.style.setProperty("--inf-size", `${final}px`);
+      }
+    }
+
+    // src helper
     const srcFor = (color, kind) =>
     {
       const letter = kindToLetter[kind] || kind.toLowerCase();
       return `${ROOT}/pieces/${theme}/${color}${letter}.png`;
     };
 
+    // board flip: if black is bottom, enemy icons go bottom, yours go top
+    const isFlipped = !!(playerSideEl && playerSideEl.value === "black");
+
     // Fill each cell
-    existing.querySelectorAll(".influence-cell").forEach((cell) =>
+    layer.querySelectorAll(".influence-cell").forEach((cell) =>
     {
       const r = parseInt(cell.dataset.row, 10);
       const c = parseInt(cell.dataset.col, 10);
@@ -1047,53 +1075,65 @@
       // clear previous
       cell.innerHTML = "";
 
-      // top gutter = enemy, bottom gutter = you
+      // gutters
       const top = document.createElement("div");
       top.className = "icons-top";
       const bot = document.createElement("div");
       bot.className = "icons-bottom";
 
+      const enemies = byEnemy[r][c] || [];
+      const yours   = byYou[r][c]   || [];
+
+      const enemyContainer = isFlipped ? bot : top;
+      const yourContainer  = isFlipped ? top : bot;
+
+      // shrink only when needed (>5)
+      adjustIconSize(enemyContainer, enemies.length, cell);
+      adjustIconSize(yourContainer,  yours.length,  cell);
+
       // opacity rule: empty squares show icons at 50%
       const isEmpty = !at(r, c);
       const faintClass = isEmpty ? " icon-faint" : "";
 
-      // Trim to avoid clutter — cap at 5 per side per square for now 
-      const enemies = byEnemy[r][c].slice(0, 5);
-      const yours   = byYou[r][c].slice(0, 5);
-      // top gutter = enemy (white-bottom), bottom gutter = you
-      // When flipped (black-bottom), swap so icons still point toward their side HOLY GOD THIS TOOK ME SO F@AWDJA LONG TO FIGURE OUT ITS NOT EVEN FUNNY
-      const isFlipped = !!(playerSideEl && playerSideEl.value === "black");
-      const enemyContainer = isFlipped ? bot : top;
-      const yourContainer  = isFlipped ? top : bot;
-
       // enemy icons (red aura)
       enemies.forEach(({ color, kind }) =>
       {
+        const wrap = document.createElement("span");
+        wrap.className = "influence-wrap icon-enemy" + faintClass;
+
         const img = document.createElement("img");
-        img.className = "influence-icon icon-enemy" + faintClass;
+        img.className = "influence-icon";
         img.setAttribute("data-color", color);
         img.setAttribute("data-kind", kind);
         img.src = srcFor(color, kind);
         img.alt = `${color}${kind}`;
-        enemyContainer.appendChild(img);
+
+        wrap.appendChild(img);
+        enemyContainer.appendChild(wrap);
       });
 
       // your icons (blue aura)
       yours.forEach(({ color, kind }) =>
       {
+        const wrap = document.createElement("span");
+        wrap.className = "influence-wrap icon-you" + faintClass;
+
         const img = document.createElement("img");
-        img.className = "influence-icon icon-you" + faintClass;
+        img.className = "influence-icon";
         img.setAttribute("data-color", color);
         img.setAttribute("data-kind", kind);
         img.src = srcFor(color, kind);
         img.alt = `${color}${kind}`;
-        yourContainer.appendChild(img);
+
+        wrap.appendChild(img);
+        yourContainer.appendChild(wrap);
       });
 
       if (top.childElementCount) cell.appendChild(top);
       if (bot.childElementCount) cell.appendChild(bot);
     });
   }
+
 
 
   function refreshInfluenceIcons()

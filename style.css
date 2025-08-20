@@ -43,7 +43,16 @@ html, body
   --threat-sep-color: rgb(82, 81, 81);
   --threat-sep-thickness: 4px;
 
-
+  /* Default mini size + spacing */ 
+  --inf-size: 18px;   /* default icon size */
+  --inf-gap: 2px;     /* gap between icons */
+  --inf-you-bg:   #1680ff;  /* blue */
+  --inf-enemy-bg: #ff3b30;  /* red  */
+  --inf-badge-radius: 8px;  /* set 50% for perfect circle */
+  --inf-badge-pad: 0px;     /* padding to show solid color around the PNG */
+  --inf-aura-scale: 0.9;         /* aura diameter relative to icon size */
+  --aura-opacity: 1;             /* master opacity for the aura */
+  
   /* Bulb glow */
   --bulb-on-color: #ffd54a;
   --bulb-on-glow-inner: rgba(255, 231, 150, 0.95);
@@ -471,6 +480,7 @@ input[type="color"]
 .influence-cell
 {
   position: relative;
+  isolation: isolate;            /* keeps negative z-index behind the icon only */
 }
 
 .influence-mini
@@ -493,47 +503,95 @@ input[type="color"]
 .icons-bottom
 {
   position: absolute;
-  left: 2px;
-  right: 2px;
+  left: 0;
+  width: 100%;
   display: flex;
-  gap: var(--influence-gap, 2px);
+  gap: var(--inf-gap);
   justify-content: center;
   pointer-events: none;
 }
 
 .icons-top
 { 
-  top: 2px;
-  align-items: flex-start;
+  top: 0;
+  height: 22%;
+  align-items: end;
 
 }
 .icons-bottom
 {
-  bottom: 2px;
-  align-items: flex-end;
+  bottom: 0;
+  height: 22%;
+  align-items: start;
 }
 
 /* icon look */
+/* wrapper that owns the aura */
+.influence-wrap
+{
+  position: relative;
+  display: inline-grid;
+  place-items: center;
+  width: var(--inf-size);
+  height: var(--inf-size);
+  z-index: 0;                /* stacking context for the -1 aura */
+}
+
+/* the image just fills the wrapper */
 .influence-icon
 {
-  width: var(--influence-icon-size, 18px);
-  height: var(--influence-icon-size, 18px);
+  width: 100%;
+  height: 100%;
   object-fit: contain;
-  filter: drop-shadow(0 0 2px rgba(0,0,0,0.55));
-  pointer-events: none;
   transform: rotate(var(--piece-unrot));
   transform-origin: center;
+  background: transparent;
+  border: none;
+  box-shadow: none !important;
+  filter: none !important;
 }
 
-.influence-icon.is-faint
+/* radiating aura: solid core → fade to transparent */
+.influence-wrap::after
 {
-  opacity: 0.5;
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: calc(var(--inf-size) * var(--inf-aura-scale));
+  height: calc(var(--inf-size) * var(--inf-aura-scale));
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: -1;               /* behind the mini, above cell bg */
+  opacity: var(--aura-opacity);
+  background:
+    radial-gradient(circle at center,
+      var(--aura-core) 0%,
+      var(--aura-core) 35%,
+      var(--aura-mid)  65%,
+      transparent      100%);
+}
+
+/* per-side colors live on the wrapper now */
+.icon-you
+{
+  --aura-core: #1680ff;
+  --aura-mid: rgba(22,128,255,0.35);
+}
+.icon-enemy
+{
+  --aura-core: #ff3b30;
+  --aura-mid: rgba(255,59,48,0.35);
+}
+
+/* keep this so empties are 50% */
+.icon-faint
+{
+  opacity: 0.6;
 }
 
 
-/* side tints (use aura/glow so the theme art stays intact) */
-.icon-you   { filter: drop-shadow(0 0 2px var(--threat-you));   }
-.icon-enemy { filter: drop-shadow(0 0 2px var(--threat-opp));   }
 
 
 /* =======================
