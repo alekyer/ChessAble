@@ -40,8 +40,8 @@ html, body
   --threat-you: rgba(157, 224, 255, 0.88);  /* blue */
   --threat-opp: rgba(255, 133, 133, 0.88);  /* red  */
   --threat-slice: 15%;                 /* left strip width */
-  --threat-sep-color: rgb(111, 111, 111);
-  --threat-sep-thickness: 6px;
+  --threat-sep-color: rgb(82, 81, 81);
+  --threat-sep-thickness: 4px;
 
 
   /* Bulb glow */
@@ -75,7 +75,7 @@ html, body
 
   --accent: #7aa2ff;
   --options-icon: #fff;   /* dark mode: white */
-  --threat-sep-color: rgb(138, 138, 138);
+
 }
 
 body
@@ -456,9 +456,93 @@ input[type="color"]
   background:  radial-gradient(closest-side, var(--threat-opp) 120%, transparent 0%);
 }
 
+/* Influence layer: tiny attacking/defending piece icons per square */
+.influence-layer
+{
+  position: absolute;
+  inset: 0;
+  display: grid;
+  grid-template-columns: repeat(8, 1fr);
+  grid-template-rows: repeat(8, 1fr);
+  z-index: 2;            /* below .square (z:2, but later in DOM .square still paints atop) */
+  pointer-events: none;  /* never blocks clicks */
+}
+
+.influence-cell
+{
+  position: relative;
+}
+
+.influence-mini
+{
+  width: 18px;
+  height: 18px;
+  object-fit: contain;
+  display: inline-block;
+  vertical-align: middle;
+}
+
+.influence-mini.mini-faint
+{
+  opacity: 0.5; /* empty squares */
+}
+
+
+/* two gutters: top for enemy (red), bottom for you (blue) */
+.icons-top,
+.icons-bottom
+{
+  position: absolute;
+  left: 2px;
+  right: 2px;
+  display: flex;
+  gap: var(--influence-gap, 2px);
+  justify-content: center;
+  pointer-events: none;
+}
+
+.icons-top
+{ 
+  top: 2px;
+  align-items: flex-start;
+
+}
+.icons-bottom
+{
+  bottom: 2px;
+  align-items: flex-end;
+}
+
+/* icon look */
+.influence-icon
+{
+  width: var(--influence-icon-size, 18px);
+  height: var(--influence-icon-size, 18px);
+  object-fit: contain;
+  filter: drop-shadow(0 0 2px rgba(0,0,0,0.55));
+  pointer-events: none;
+  transform: rotate(var(--piece-unrot));
+  transform-origin: center;
+}
+
+.influence-icon.is-faint
+{
+  opacity: 0.5;
+}
+
+
+/* side tints (use aura/glow so the theme art stays intact) */
+.icon-you   { filter: drop-shadow(0 0 2px var(--threat-you));   }
+.icon-enemy { filter: drop-shadow(0 0 2px var(--threat-opp));   }
+
+
 /* =======================
    Squares / pieces / glow
    ======================= */
+.icon-faint
+{
+  opacity: 0.6;
+}
 
 .square
 {
@@ -484,8 +568,8 @@ input[type="color"]
 /* Piece images with JS-provided vars */
 .piece-img
 {
-  width: calc(115% * var(--piece-scale, 1));
-  height: calc(115% * var(--piece-scale, 1));
+  width: calc(82% * var(--piece-scale, 1));
+  height: calc(82% * var(--piece-scale, 1));
   object-fit: contain;
   pointer-events: none;
   image-rendering: auto;

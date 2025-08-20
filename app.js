@@ -184,6 +184,7 @@
 
     // Update popup choices if a promotion is pending
     refreshPromotionPopupImages();
+    refreshInfluenceIcons();
 
     try
     {
@@ -274,6 +275,102 @@
 
     return { moves, attacks };
   }
+
+  // All squares in the ray directions, including empties, stopping at first piece (inclusive)
+  function raySquaresUntilBlock(r, c, directions)
+  {
+    const out = [];
+    for (const [dr, dc] of directions)
+    {
+      let rr = r + dr, cc = c + dc;
+      while (inBounds(rr, cc))
+      {
+        out.push({ r: rr, c: cc });
+        if (at(rr, cc)) break; // stop once we hit any piece
+        rr += dr; cc += dc;
+      }
+    }
+    return out;
+  }
+
+
+  // Squares where the piece at (r,c) is defending its own pieces.
+  // (First friendly piece hit in each direction for sliders; direct neighbors for N/K; pawn diagonals.)
+  function findDefendedSquares(r, c)
+  {
+    const p = at(r, c);
+    if (!p) return [];
+
+    const out = [];
+    const color = p.color;
+
+    switch (p.kind)
+    {
+      case "N":
+      {
+        const deltas = [[-2,-1],[-2,1],[-1,-2],[-1,2],[1,-2],[1,2],[2,-1],[2,1]];
+        for (const [dr, dc] of deltas)
+        {
+          const rr = r + dr, cc = c + dc;
+          if (!inBounds(rr, cc)) continue;
+          const t = at(rr, cc);
+          if (t && t.color === color) out.push({ r: rr, c: cc });
+        }
+        break;
+      }
+      case "K": {
+        for (let dr = -1; dr <= 1; dr++)
+        {
+          for (let dc = -1; dc <= 1; dc++)
+          {
+            if (!dr && !dc) continue;
+            const rr = r + dr, cc = c + dc;
+            if (!inBounds(rr, cc)) continue;
+            const t = at(rr, cc);
+            if (t && t.color === color) out.push({ r: rr, c: cc });
+          }
+        }
+        break;
+      }
+      case "B":
+      case "R":
+      case "Q":
+      {
+        const dirs =
+          p.kind === "B" ? [[-1,-1],[-1,1],[1,-1],[1,1]] :
+          p.kind === "R" ? [[-1,0],[1,0],[0,-1],[0,1]] :
+                          [[-1,-1],[-1,1],[1,-1],[1,1],[-1,0],[1,0],[0,-1],[0,1]];
+        for (const [dr, dc] of dirs)
+        {
+          let rr = r + dr, cc = c + dc;
+          while (inBounds(rr, cc)) {
+            const t = at(rr, cc);
+            if (t) {
+              if (t.color === color) out.push({ r: rr, c: cc });
+              // hit a piece (friend or foe) → ray stops
+              break;
+            }
+            rr += dr; cc += dc;
+          }
+        }
+        break;
+      }
+      case "P":
+      {
+        const dir = (color === "w") ? -1 : 1;
+        for (const dc of [-1, 1])
+        {
+          const rr = r + dir, cc = c + dc;
+          if (!inBounds(rr, cc)) continue;
+          const t = at(rr, cc);
+          if (t && t.color === color) out.push({ r: rr, c: cc });
+        }
+        break;
+      }
+    }
+    return out;
+  }
+
 
   // mode: "both" | "moves" | "attacks" (UI-only; legality is always both)
   function highlights(r, c, mode)
@@ -822,6 +919,199 @@
     return out;
   }
 
+  function pieceImgSrc(theme, color, kind)
+  {
+    const letter = kindToLetter[kind] || kind.toLowerCase();
+    return `${ROOT}/pieces/${theme}/${color}${letter}.png`;
+  }
+
+  function computeInfluenceSources()
+  {
+    const bottomColor = (playerSideEl && playerSideEl.value === "black") ? B : W;
+    const topColor    = (bottomColor === W) ? B : W;
+
+    const mk = () => Array.from({ length: 8 }, () => Array.from({ length: 8 }, () => []));
+    const byYou   = mk();
+    const byEnemy = mk();
+
+    const push = (arr, r, c, p) =>
+    {
+      arr[r][c].push({ color: p.color, kind: p.kind });
+    };
+
+    for (let r = 0; r < 8; r++)
+    {
+      for (let c = 0; c < 8; c++)
+      {
+        const p = at(r, c);
+        if (!p) continue;
+
+        const mine = (p.color === bottomColor) ? byYou : byEnemy;
+
+        switch (p.kind)
+        {
+          case "B":
+          case "R":
+          case "Q":
+          {
+            const dirs =
+              p.kind === "B" ? [[-1,-1],[-1,1],[1,-1],[1,1]] :
+              p.kind === "R" ? [[-1,0],[1,0],[0,-1],[0,1]] :
+                              [[-1,-1],[-1,1],[1,-1],[1,1],[-1,0],[1,0],[0,-1],[0,1]];
+
+            const path = raySquaresUntilBlock(r, c, dirs);
+            for (const sq of path)
+            {
+              push(mine, sq.r, sq.c, p); // include empties and the first blocker (friend = defend, foe = attack)
+            }
+            break;
+          }
+
+          case "N":
+          {
+            const deltas = [[-2,-1],[-2,1],[-1,-2],[-1,2],[1,-2],[1,2],[2,-1],[2,1]];
+            for (const [dr, dc] of deltas)
+            {
+              const rr = r + dr, cc = c + dc;
+              if (!inBounds(rr, cc)) continue;
+              push(mine, rr, cc, p); // include empty, friend (defend), or foe (attack)
+            }
+            break;
+          }
+
+          case "K":
+          {
+            for (let dr = -1; dr <= 1; dr++)
+            {
+              for (let dc = -1; dc <= 1; dc++)
+              {
+                if (!dr && !dc) continue;
+                const rr = r + dr, cc = c + dc;
+                if (!inBounds(rr, cc)) continue;
+                push(mine, rr, cc, p);
+              }
+            }
+            break;
+          }
+
+          case "P":
+          {
+            const dir = (p.color === W) ? -1 : 1;
+            for (const dc of [-1, 1])
+            {
+              const rr = r + dir, cc = c + dc;
+              if (inBounds(rr, cc))
+              {
+                push(mine, rr, cc, p); // show diagonal attack/defense square even if empty
+              }
+            }
+            // En passant attack square (if available)
+            const ep = boardState.enPassant;
+            if (ep && ep.by === p.color)
+            {
+              // EP target is one of the diagonals above; I already included if in-bounds
+              // Nothing else needed here unless I want to *only* show EP when legal.
+            }
+            break;
+          }
+        }
+      }
+    }
+
+    return { byYou, byEnemy };
+  }
+
+
+  function drawInfluenceOverlay()
+  {
+    const existing = boardEl.querySelector(".influence-layer");
+    if (!existing) return; // not built yet (renderBoard builds it)
+
+    // recompute
+    const { byYou, byEnemy } = computeInfluenceSources();
+    const theme = pieceThemeEl.value;
+
+    // helper: build image src from theme/color/kind
+    const srcFor = (color, kind) =>
+    {
+      const letter = kindToLetter[kind] || kind.toLowerCase();
+      return `${ROOT}/pieces/${theme}/${color}${letter}.png`;
+    };
+
+    // Fill each cell
+    existing.querySelectorAll(".influence-cell").forEach((cell) =>
+    {
+      const r = parseInt(cell.dataset.row, 10);
+      const c = parseInt(cell.dataset.col, 10);
+
+      // clear previous
+      cell.innerHTML = "";
+
+      // top gutter = enemy, bottom gutter = you
+      const top = document.createElement("div");
+      top.className = "icons-top";
+      const bot = document.createElement("div");
+      bot.className = "icons-bottom";
+
+      // opacity rule: empty squares show icons at 50%
+      const isEmpty = !at(r, c);
+      const faintClass = isEmpty ? " icon-faint" : "";
+
+      // Trim to avoid clutter — cap at 5 per side per square for now 
+      const enemies = byEnemy[r][c].slice(0, 5);
+      const yours   = byYou[r][c].slice(0, 5);
+      // top gutter = enemy (white-bottom), bottom gutter = you
+      // When flipped (black-bottom), swap so icons still point toward their side HOLY GOD THIS TOOK ME SO F@AWDJA LONG TO FIGURE OUT ITS NOT EVEN FUNNY
+      const isFlipped = !!(playerSideEl && playerSideEl.value === "black");
+      const enemyContainer = isFlipped ? bot : top;
+      const yourContainer  = isFlipped ? top : bot;
+
+      // enemy icons (red aura)
+      enemies.forEach(({ color, kind }) =>
+      {
+        const img = document.createElement("img");
+        img.className = "influence-icon icon-enemy" + faintClass;
+        img.setAttribute("data-color", color);
+        img.setAttribute("data-kind", kind);
+        img.src = srcFor(color, kind);
+        img.alt = `${color}${kind}`;
+        enemyContainer.appendChild(img);
+      });
+
+      // your icons (blue aura)
+      yours.forEach(({ color, kind }) =>
+      {
+        const img = document.createElement("img");
+        img.className = "influence-icon icon-you" + faintClass;
+        img.setAttribute("data-color", color);
+        img.setAttribute("data-kind", kind);
+        img.src = srcFor(color, kind);
+        img.alt = `${color}${kind}`;
+        yourContainer.appendChild(img);
+      });
+
+      if (top.childElementCount) cell.appendChild(top);
+      if (bot.childElementCount) cell.appendChild(bot);
+    });
+  }
+
+
+  function refreshInfluenceIcons()
+  {
+    const theme = pieceThemeEl.value;
+    document.querySelectorAll(".influence-icon").forEach((img) =>
+    {
+      const color = img.getAttribute("data-color");
+      const kind  = img.getAttribute("data-kind");
+      if (color && kind)
+      {
+        img.src = pieceImgSrc(theme, color, kind);
+        img.alt = `${color}${kind}`;
+      }
+    });
+  }
+
+
   // ---- Threat compute----
   function computeThreatMaps()
   {
@@ -913,10 +1203,10 @@
       // Vertical separator at the right edge of the slice
       const sep = `linear-gradient(
         to right,
-        transparent calc(var(--threat-slice) - var(--threat-sep-thickness) / 2),
-        var(--threat-sep-color) calc(var(--threat-slice) - var(--threat-sep-thickness) / 2),
-        var(--threat-sep-color) calc(var(--threat-slice) + var(--threat-sep-thickness) / 2),
-        transparent calc(var(--threat-slice) + var(--threat-sep-thickness) / 2)
+        transparent var(--threat-slice),
+        var(--threat-sep-color) var(--threat-slice),
+        var(--threat-sep-color) calc(var(--threat-slice) + var(--threat-sep-thickness)),
+        transparent calc(var(--threat-slice) + var(--threat-sep-thickness))
       )`;
 
       // Layer them: bands + lines confined to left slice; separator spans full cell
@@ -950,6 +1240,22 @@
       }
     }
     boardEl.appendChild(layer);
+
+    // Build influence icon layer (between threat layer and squares)
+    const infl = document.createElement("div");
+    infl.className = "influence-layer";
+    for (let rr = 0; rr < 8; rr++)
+    {
+      for (let cc = 0; cc < 8; cc++)
+      {
+        const slot = document.createElement("div");
+        slot.className = "influence-cell";
+        slot.dataset.row = rr;
+        slot.dataset.col = cc;
+        infl.appendChild(slot);
+      }
+    }
+    boardEl.appendChild(infl);
 
     // Build the actual squares
     for (let r = 0; r < 8; r++)
@@ -1016,7 +1322,8 @@
     if (mode !== "off")
     {
       const maps = computeThreatMaps();
-      drawThreatOverlay(mode, maps);
+      // drawThreatOverlay(mode, maps);
+      drawInfluenceOverlay();
     }
 
   }
