@@ -51,7 +51,7 @@ html, body
   --inf-badge-radius: 8px;  /* set 50% for perfect circle */
   --inf-badge-pad: 0px;     /* padding to show solid color around the PNG */
   --inf-aura-scale: 0.9;         /* aura diameter relative to icon size */
-  --aura-opacity: 1;             /* master opacity for the aura */
+  --aura-opacity: 1.1;             /* master opacity for the aura */
   
   /* Bulb glow */
   --bulb-on-color: #ffd54a;
