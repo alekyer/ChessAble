@@ -37,11 +37,13 @@ html, body
   --piece-unrot: 0deg;   /* counter-rotation for piece images */
   
   /* Threat visuals */
-  --threat-you: rgba(157, 224, 255, 0.88);  /* blue */
-  --threat-opp: rgba(255, 133, 133, 0.88);  /* red  */
-  --threat-slice: 15%;                 /* left strip width */
+  /*
+  --threat-you: rgba(157, 224, 255, 0.88);  
+  --threat-opp: rgba(255, 133, 133, 0.88);  
+  --threat-slice: 15%;                 
   --threat-sep-color: rgb(82, 81, 81);
   --threat-sep-thickness: 4px;
+  */
 
   /* Default mini size + spacing */ 
   --inf-size: 18px;   /* default icon size */

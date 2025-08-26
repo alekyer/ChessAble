@@ -294,82 +294,82 @@
   }
 
 
-  // Squares where the piece at (r,c) is defending its own pieces.
-  // (First friendly piece hit in each direction for sliders; direct neighbors for N/K; pawn diagonals.)
-  function findDefendedSquares(r, c)
-  {
-    const p = at(r, c);
-    if (!p) return [];
+  // // Squares where the piece at (r,c) is defending its own pieces.
+  // // (First friendly piece hit in each direction for sliders; direct neighbors for N/K; pawn diagonals.)
+  // function findDefendedSquares(r, c)
+  // {
+  //   const p = at(r, c);
+  //   if (!p) return [];
 
-    const out = [];
-    const color = p.color;
+  //   const out = [];
+  //   const color = p.color;
 
-    switch (p.kind)
-    {
-      case "N":
-      {
-        const deltas = [[-2,-1],[-2,1],[-1,-2],[-1,2],[1,-2],[1,2],[2,-1],[2,1]];
-        for (const [dr, dc] of deltas)
-        {
-          const rr = r + dr, cc = c + dc;
-          if (!inBounds(rr, cc)) continue;
-          const t = at(rr, cc);
-          if (t && t.color === color) out.push({ r: rr, c: cc });
-        }
-        break;
-      }
-      case "K": {
-        for (let dr = -1; dr <= 1; dr++)
-        {
-          for (let dc = -1; dc <= 1; dc++)
-          {
-            if (!dr && !dc) continue;
-            const rr = r + dr, cc = c + dc;
-            if (!inBounds(rr, cc)) continue;
-            const t = at(rr, cc);
-            if (t && t.color === color) out.push({ r: rr, c: cc });
-          }
-        }
-        break;
-      }
-      case "B":
-      case "R":
-      case "Q":
-      {
-        const dirs =
-          p.kind === "B" ? [[-1,-1],[-1,1],[1,-1],[1,1]] :
-          p.kind === "R" ? [[-1,0],[1,0],[0,-1],[0,1]] :
-                          [[-1,-1],[-1,1],[1,-1],[1,1],[-1,0],[1,0],[0,-1],[0,1]];
-        for (const [dr, dc] of dirs)
-        {
-          let rr = r + dr, cc = c + dc;
-          while (inBounds(rr, cc)) {
-            const t = at(rr, cc);
-            if (t) {
-              if (t.color === color) out.push({ r: rr, c: cc });
-              // hit a piece (friend or foe) → ray stops
-              break;
-            }
-            rr += dr; cc += dc;
-          }
-        }
-        break;
-      }
-      case "P":
-      {
-        const dir = (color === "w") ? -1 : 1;
-        for (const dc of [-1, 1])
-        {
-          const rr = r + dir, cc = c + dc;
-          if (!inBounds(rr, cc)) continue;
-          const t = at(rr, cc);
-          if (t && t.color === color) out.push({ r: rr, c: cc });
-        }
-        break;
-      }
-    }
-    return out;
-  }
+  //   switch (p.kind)
+  //   {
+  //     case "N":
+  //     {
+  //       const deltas = [[-2,-1],[-2,1],[-1,-2],[-1,2],[1,-2],[1,2],[2,-1],[2,1]];
+  //       for (const [dr, dc] of deltas)
+  //       {
+  //         const rr = r + dr, cc = c + dc;
+  //         if (!inBounds(rr, cc)) continue;
+  //         const t = at(rr, cc);
+  //         if (t && t.color === color) out.push({ r: rr, c: cc });
+  //       }
+  //       break;
+  //     }
+  //     case "K": {
+  //       for (let dr = -1; dr <= 1; dr++)
+  //       {
+  //         for (let dc = -1; dc <= 1; dc++)
+  //         {
+  //           if (!dr && !dc) continue;
+  //           const rr = r + dr, cc = c + dc;
+  //           if (!inBounds(rr, cc)) continue;
+  //           const t = at(rr, cc);
+  //           if (t && t.color === color) out.push({ r: rr, c: cc });
+  //         }
+  //       }
+  //       break;
+  //     }
+  //     case "B":
+  //     case "R":
+  //     case "Q":
+  //     {
+  //       const dirs =
+  //         p.kind === "B" ? [[-1,-1],[-1,1],[1,-1],[1,1]] :
+  //         p.kind === "R" ? [[-1,0],[1,0],[0,-1],[0,1]] :
+  //                         [[-1,-1],[-1,1],[1,-1],[1,1],[-1,0],[1,0],[0,-1],[0,1]];
+  //       for (const [dr, dc] of dirs)
+  //       {
+  //         let rr = r + dr, cc = c + dc;
+  //         while (inBounds(rr, cc)) {
+  //           const t = at(rr, cc);
+  //           if (t) {
+  //             if (t.color === color) out.push({ r: rr, c: cc });
+  //             // hit a piece (friend or foe) → ray stops
+  //             break;
+  //           }
+  //           rr += dr; cc += dc;
+  //         }
+  //       }
+  //       break;
+  //     }
+  //     case "P":
+  //     {
+  //       const dir = (color === "w") ? -1 : 1;
+  //       for (const dc of [-1, 1])
+  //       {
+  //         const rr = r + dir, cc = c + dc;
+  //         if (!inBounds(rr, cc)) continue;
+  //         const t = at(rr, cc);
+  //         if (t && t.color === color) out.push({ r: rr, c: cc });
+  //       }
+  //       break;
+  //     }
+  //   }
+  //   return out;
+  // }
 
 
   // mode: "both" | "moves" | "attacks" (UI-only; legality is always both)
@@ -1186,77 +1186,77 @@
     return { yours, enemy };
   }
 
-  // ---- Threat visualization----
-  function drawThreatOverlay(mode, maps)
-  {
-    const cells = boardEl.querySelectorAll(".threat-cell");
+  // ---- Threat visualization----  NOT CURRENTLY USING
+  // function drawThreatOverlay(mode, maps)
+  // {
+  //   const cells = boardEl.querySelectorAll(".threat-cell");
 
-    cells.forEach((cell) => {
-      cell.classList.remove("threat-you", "threat-enemy");
+  //   cells.forEach((cell) => {
+  //     cell.classList.remove("threat-you", "threat-enemy");
 
-      const r = parseInt(cell.dataset.row, 10);
-      const c = parseInt(cell.dataset.col, 10);
+  //     const r = parseInt(cell.dataset.row, 10);
+  //     const c = parseInt(cell.dataset.col, 10);
 
-      let y = maps.yours[r][c];  // player contributions
-      let e = maps.enemy[r][c];  // opponent contributions
+  //     let y = maps.yours[r][c];  // player contributions
+  //     let e = maps.enemy[r][c];  // opponent contributions
 
-      // Respect toggle
-      if (mode === "yours") e = 0;
-      if (mode === "enemy") y = 0;
+  //     // Respect toggle
+  //     if (mode === "yours") e = 0;
+  //     if (mode === "enemy") y = 0;
 
-      const total = y + e;
+  //     const total = y + e;
 
-      if (!total)
-      {
-        // clear previous backgrounds
-        cell.style.backgroundImage = "";
-        cell.style.backgroundSize = "";
-        cell.style.backgroundPosition = "";
-        cell.style.backgroundRepeat = "";
-        cell.style.backgroundBlendMode = "";
-        return;
-      }
+  //     if (!total)
+  //     {
+  //       // clear previous backgrounds
+  //       cell.style.backgroundImage = "";
+  //       cell.style.backgroundSize = "";
+  //       cell.style.backgroundPosition = "";
+  //       cell.style.backgroundRepeat = "";
+  //       cell.style.backgroundBlendMode = "";
+  //       return;
+  //     }
 
-      // Build equal-height horizontal bands for total contributions.
-      const step = 100 / total;
-      const segments = [];
-      for (let i = 0; i < total; i++)
-      {
-        const start = (i * step).toFixed(4) + "%";
-        const end   = ((i + 1) * step).toFixed(4) + "%";
-        const color = i < y ? "var(--threat-you)" : "var(--threat-opp)";
-        segments.push(`${color} ${start} ${end}`);
-      }
+  //     // Build equal-height horizontal bands for total contributions.
+  //     const step = 100 / total;
+  //     const segments = [];
+  //     for (let i = 0; i < total; i++)
+  //     {
+  //       const start = (i * step).toFixed(4) + "%";
+  //       const end   = ((i + 1) * step).toFixed(4) + "%";
+  //       const color = i < y ? "var(--threat-you)" : "var(--threat-opp)";
+  //       segments.push(`${color} ${start} ${end}`);
+  //     }
 
-      // The band fill (only in the left slice)
-      const bands = `linear-gradient(to bottom, ${segments.join(",")})`;
+  //     // The band fill (only in the left slice)
+  //     const bands = `linear-gradient(to bottom, ${segments.join(",")})`;
 
-      // Thin horizontal separators inside the slice (one per band)
-      const lines = `repeating-linear-gradient(
-        to bottom,
-        var(--threat-sep-color),
-        var(--threat-sep-color) 4px,
-        transparent 1px,
-        transparent ${step}%
-      )`;
+  //     // Thin horizontal separators inside the slice (one per band)
+  //     const lines = `repeating-linear-gradient(
+  //       to bottom,
+  //       var(--threat-sep-color),
+  //       var(--threat-sep-color) 4px,
+  //       transparent 1px,
+  //       transparent ${step}%
+  //     )`;
 
-      // Vertical separator at the right edge of the slice
-      const sep = `linear-gradient(
-        to right,
-        transparent var(--threat-slice),
-        var(--threat-sep-color) var(--threat-slice),
-        var(--threat-sep-color) calc(var(--threat-slice) + var(--threat-sep-thickness)),
-        transparent calc(var(--threat-slice) + var(--threat-sep-thickness))
-      )`;
+  //     // Vertical separator at the right edge of the slice
+  //     const sep = `linear-gradient(
+  //       to right,
+  //       transparent var(--threat-slice),
+  //       var(--threat-sep-color) var(--threat-slice),
+  //       var(--threat-sep-color) calc(var(--threat-slice) + var(--threat-sep-thickness)),
+  //       transparent calc(var(--threat-slice) + var(--threat-sep-thickness))
+  //     )`;
 
-      // Layer them: bands + lines confined to left slice; separator spans full cell
-      cell.style.backgroundImage = ` ${lines}, ${bands}, ${sep}`;
-      cell.style.backgroundSize = `var(--threat-slice) 100%, var(--threat-slice) 100%, 100% 100%`;
-      cell.style.backgroundPosition = `left top, left top, left top`;
-      cell.style.backgroundRepeat = `no-repeat, no-repeat, no-repeat`;
-      cell.style.backgroundBlendMode = `normal`;
-    });
-  }
+  //     // Layer them: bands + lines confined to left slice; separator spans full cell
+  //     cell.style.backgroundImage = ` ${lines}, ${bands}, ${sep}`;
+  //     cell.style.backgroundSize = `var(--threat-slice) 100%, var(--threat-slice) 100%, 100% 100%`;
+  //     cell.style.backgroundPosition = `left top, left top, left top`;
+  //     cell.style.backgroundRepeat = `no-repeat, no-repeat, no-repeat`;
+  //     cell.style.backgroundBlendMode = `normal`;
+  //   });
+  // }
 
 
 
