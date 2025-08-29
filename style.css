@@ -84,7 +84,7 @@ html, body
   --surface-2: #11151c;
   --border: rgba(255,255,255,0.12);
 
-  --accent: #7aa2ff;
+  --accent: #85a9ff;
   --options-icon: #fff;   /* dark mode: white */
 
 }
@@ -232,7 +232,7 @@ body
   height: 100vh;
   width: var(--sidebar-width);
   transform: translateX(-100%);
-  transition: transform 460ms ease;
+  transition: transform 560ms ease;
   z-index: 90;
 
   /* panel visual */
