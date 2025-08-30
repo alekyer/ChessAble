@@ -1449,53 +1449,6 @@
     });
   }
 
-  function onClickSquare(ev)
-  {
-    // Ignore board clicks while promotion UI is open
-    if (boardState.promotion)
-    {
-      return;
-    }
-
-    const sq = ev.currentTarget;
-    const r = parseInt(sq.dataset.row, 10);
-    const c = parseInt(sq.dataset.col, 10);
-
-    if (boardState.selected && isLegalTarget(r, c))
-    {
-      makeMove(boardState.selected.r, boardState.selected.c, r, c);
-      return;
-    }
-
-    const p = at(r, c);
-
-    if (p && p.color === boardState.turn)
-    {
-      selectSquare(r, c);
-      return;
-    }
-
-    // Clicked empty/illegal: clear selection
-    boardState.selected = null;
-    boardState.legal.moves.clear();
-    boardState.legal.attacks.clear();
-    clearHighlights();
-  }
-  // ---- Player side choice ----
-    function applyPlayerSide(side)
-  {
-    const isBlack = (side === "black");
-    setCSSVar("--board-rot", isBlack ? "180deg" : "0deg");
-    setCSSVar("--piece-unrot", isBlack ? "180deg" : "0deg");
-
-    try
-    {
-      localStorage.setItem(SIDE_KEY, isBlack ? "black" : "white");
-    }
-    catch (_)
-    {}
-  }
-
 
   // ---- Controls init ----
   (function initControls()
