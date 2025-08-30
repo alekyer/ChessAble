@@ -20,6 +20,46 @@
   const threatViewEl = document.getElementById("threatView");
   const THREAT_KEY = "threatView";
 
+   // --- Board-level click delegation (replace per-square listeners) ---
+  boardEl.addEventListener("click", onBoardClick);
+
+  function onBoardClick(ev)
+  {
+    // Ignore board clicks while promotion UI is open
+    if (boardState.promotion)
+    {
+      return;
+    }
+
+    const target = ev.target.closest(".square");
+    if (!target || !boardEl.contains(target))
+    {
+      return;
+    }
+
+    const r = parseInt(target.dataset.row, 10);
+    const c = parseInt(target.dataset.col, 10);
+
+    if (boardState.selected && isLegalTarget(r, c))
+    {
+      makeMove(boardState.selected.r, boardState.selected.c, r, c);
+      return;
+    }
+
+    const p = at(r, c);
+    if (p && p.color === boardState.turn)
+    {
+      selectSquare(r, c);
+      return;
+    }
+
+    // Clicked empty/illegal: clear selection
+    boardState.selected = null;
+    boardState.legal.moves.clear();
+    boardState.legal.attacks.clear();
+    clearHighlights();
+  }
+
   function setSidebar(open)
   {
     if (!sidebarEl) return;
@@ -1319,7 +1359,6 @@
           sq.appendChild(img);
         }
 
-        sq.addEventListener("click", onClickSquare);
         boardEl.appendChild(sq);
       }
     }
