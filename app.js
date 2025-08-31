@@ -72,25 +72,15 @@
       sideDimEl.classList.toggle("show", !!open);
     }
 
-    try
-    {
-      localStorage.setItem(SIDEBAR_KEY, open ? "1" : "0");
-    }
-    catch (_)
+    lsSet(SIDEBAR_KEY, open ? "1" : "0");
     {}
   }
 
   // Restore last state (default closed)
   (function initSidebar()
   {
-    let open = false;
-
-    try
-    {
-      open = localStorage.getItem(SIDEBAR_KEY) === "1";
-    }
-    catch (_)
-    {}
+    
+    const open = lsGet(SIDEBAR_KEY) === "1";
 
     setSidebar(open);
 
@@ -111,17 +101,8 @@
 
   (function initTheme()
   {
-    let saved = null;
-
-    try
-    {
-      saved = localStorage.getItem(THEME_KEY);
-    }
-    catch (_)
-    {
-      saved = null;
-    }
-
+    
+    const saved = lsGet(THEME_KEY);
     const root = document.documentElement;
     const setAria = () =>
     {
@@ -150,12 +131,7 @@
         const isDark =
           root.classList.contains("theme-dark");
 
-        try
-        {
-          localStorage.setItem(THEME_KEY, isDark ? "dark" : "light");
-        }
-        catch (_)
-        {}
+        lsSet(THEME_KEY, isDark ? "dark" : "light");
 
         setAria();
       });
@@ -179,12 +155,7 @@
   {
     setCSSVar("--board-bg", `url(${ROOT}/boards/${name})`);
 
-    try
-    {
-      localStorage.setItem("boardTheme", name);
-    }
-    catch (_)
-    {}
+    lsSet("boardTheme", name);
   }
 
   function applyPieceTheme(name)
@@ -226,12 +197,8 @@
     refreshPromotionPopupImages();
     refreshInfluenceIcons();
 
-    try
-    {
-      localStorage.setItem("pieceTheme", name);
-    }
-    catch (_)
-    {}
+    lsSet("pieceTheme", name);
+    
   }
 
   // ---- Position + engine state (en passant + promotion UI) ----
