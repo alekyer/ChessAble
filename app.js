@@ -21,7 +21,10 @@
   const THREAT_KEY = "threatView";
 
    // --- Board-level click delegation (replace per-square listeners) ---
-  boardEl.addEventListener("click", onBoardClick);
+  if (boardEl)
+  {
+    boardEl.addEventListener("click", onBoardClick);
+  }
 
   function onBoardClick(ev)
   {
@@ -73,7 +76,6 @@
     }
 
     lsSet(SIDEBAR_KEY, open ? "1" : "0");
-    {}
   }
 
   // Restore last state (default closed)
@@ -150,6 +152,29 @@
     document.documentElement.style.setProperty(name, value);
   }
 
+  // ---- LocalStorage helpers (safe) ----
+  function lsGet(key)
+  {
+    try
+    {
+      return localStorage.getItem(key);
+    }
+    catch (_)
+    {
+      return null;
+    }
+  }
+
+  function lsSet(key, value)
+  {
+    try
+      {
+      localStorage.setItem(key, value);
+      }
+    catch (_)
+    {}
+  }
+
   // ---- Theme helpers ----
   function applyBoardTheme(name)
   {
@@ -200,6 +225,16 @@
     lsSet("pieceTheme", name);
     
   }
+
+  // ---- Player side choice ----
+   function applyPlayerSide(side)
+  {
+    const isBlack = (side === "black");
+    setCSSVar("--board-rot", isBlack ? "180deg" : "0deg");
+    setCSSVar("--piece-unrot", isBlack ? "180deg" : "0deg");
+    lsSet(SIDE_KEY, isBlack ? "black" : "white");
+  }
+
 
   // ---- Position + engine state (en passant + promotion UI) ----
   function startingPosition()
@@ -1428,11 +1463,7 @@
     attackColorEl.addEventListener("input", () => setCSSVar("--attack-glow", attackColorEl.value));
 
     // Board theme
-    const savedBoard = (() =>
-    {
-      try { return localStorage.getItem("boardTheme"); }
-      catch (_) { return null; }
-    })();
+    const savedBoard = lsGet("boardTheme");
 
     if (savedBoard && Array.from(boardThemeEl.options).some((o) => o.value === savedBoard))
     {
@@ -1443,11 +1474,7 @@
     boardThemeEl.addEventListener("change", () => applyBoardTheme(boardThemeEl.value));
 
     // Piece theme
-    const savedPieces = (() =>
-    {
-      try { return localStorage.getItem("pieceTheme"); }
-      catch (_) { return null; }
-    })();
+    const savedPieces = lsGet("pieceTheme");
 
     if (savedPieces && Array.from(pieceThemeEl.options).some((o) => o.value === savedPieces))
     {
@@ -1460,11 +1487,7 @@
     });
     
     // Player side (bottom)
-    const savedSide = (() =>
-    {
-      try { return localStorage.getItem(SIDE_KEY); }
-      catch (_) { return null; }
-    })();
+    const savedSide = lsGet(SIDE_KEY);
 
     if (playerSideEl)
     {
@@ -1476,14 +1499,8 @@
       (function ensureSideOnLoad()
       {
         let side = "white";
-        try
-        {
-          const s = localStorage.getItem(SIDE_KEY);
-          if (s === "black") side = "black";
-        }
-        catch (_)
-        {}
-
+        const s = lsGet(SIDE_KEY);
+        if (s === "black") side = "black";
         applyPlayerSide(side);
       })();
 
@@ -1497,11 +1514,7 @@
       });
     }
     // Threat overlay toggle (persist)
-    const savedThreat = (() =>
-    {
-      try { return localStorage.getItem(THREAT_KEY); }
-      catch (_) { return null; }
-    })();
+    const savedThreat = lsGet(THREAT_KEY);
 
     if (threatViewEl)
     {
@@ -1512,7 +1525,7 @@
 
       threatViewEl.addEventListener("change", () =>
       {
-        try { localStorage.setItem(THREAT_KEY, threatViewEl.value); } catch (_){}
+        lsSet(THREAT_KEY, threatViewEl.value);
         renderBoard(); // redraw to apply new overlay mode
       });
     }
@@ -1552,11 +1565,7 @@
   // ---- Initial render ----
   renderBoard();
 
-  const savedPieces = (() =>
-  {
-    try { return localStorage.getItem("pieceTheme"); }
-    catch (_) { return null; }
-  })();
+  const savedPieces = lsGet("pieceTheme");
 
   if (savedPieces && Array.from(pieceThemeEl.options).some((o) => o.value === savedPieces))
   {
