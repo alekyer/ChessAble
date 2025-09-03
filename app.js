@@ -201,7 +201,7 @@
     }
 
     // Update board piece images
-    document.querySelectorAll(".piece-img").forEach((img) =>
+    boardEl.querySelectorAll(".piece-img").forEach((img) =>
     {
       const color = (img.getAttribute("data-color") || "").toLowerCase();
       const kind = img.getAttribute("data-kind") || "";
@@ -1181,7 +1181,7 @@
   function refreshInfluenceIcons()
   {
     const theme = pieceThemeEl.value;
-    document.querySelectorAll(".influence-icon").forEach((img) =>
+    boardEl.querySelectorAll(".influence-icon").forEach((img) =>
     {
       const color = img.getAttribute("data-color");
       const kind  = img.getAttribute("data-kind");
@@ -1416,7 +1416,7 @@
 
   function clearHighlights()
   {
-    document.querySelectorAll(".square").forEach((sq) =>
+    boardEl.querySelectorAll(".square").forEach((sq) =>
     {
       sq.classList.remove("highlight-move", "highlight-attack", "highlight-selected");
     });
@@ -1433,7 +1433,7 @@
     const showMoves = mode === "both" || mode === "moves";
     const showAttacks = mode === "both" || mode === "attacks";
 
-    document.querySelectorAll(".square").forEach((s) =>
+    boardEl.querySelectorAll(".square").forEach((s) =>
     {
       const rr = parseInt(s.dataset.row, 10);
       const cc = parseInt(s.dataset.col, 10);
