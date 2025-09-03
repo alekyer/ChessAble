@@ -225,6 +225,18 @@
     lsSet("pieceTheme", name);
     
   }
+  // ---- Render scheduler (coalesce frame) ----
+  let renderPending = false;
+  function scheduleRender()
+  {
+    if (renderPending) return;
+    renderPending = true;
+    requestAnimationFrame(() =>
+    {
+      renderPending = false;
+      renderBoard();
+    });
+  }
 
   // ---- Player side choice ----
    function applyPlayerSide(side)
@@ -698,7 +710,7 @@
       boardState.legal.attacks.clear();
 
       // Re-render board so pawn is visually on the last rank under the popup
-      renderBoard();
+      scheduleRender();
 
       // IMPORTANT: Do NOT swap turn yet; move is incomplete until a piece is chosen
       return;
@@ -711,7 +723,7 @@
     boardState.legal.moves.clear();
     boardState.legal.attacks.clear();
 
-    renderBoard();
+    scheduleRender();
   }
 
   // ---- Promotion UI ----
@@ -1484,6 +1496,7 @@
     pieceThemeEl.addEventListener("change", () =>
     {
       applyPieceTheme(pieceThemeEl.value);
+      scheduleRender();
     });
     
     // Player side (bottom)
@@ -1509,8 +1522,7 @@
       playerSideEl.addEventListener("change", () =>
       {
         applyPlayerSide(playerSideEl.value);
-
-        renderBoard();
+        scheduleRender();
       });
     }
     // Threat overlay toggle (persist)
@@ -1526,7 +1538,7 @@
       threatViewEl.addEventListener("change", () =>
       {
         lsSet(THREAT_KEY, threatViewEl.value);
-        renderBoard(); // redraw to apply new overlay mode
+        scheduleRender(); // redraw to apply new overlay mode
       });
     }
 
@@ -1557,7 +1569,7 @@
         boardState.legal.attacks.clear();
         boardState.lastMove = null;
         boardState.enPassant = null;
-        renderBoard();
+        scheduleRender();
       });
     }
   })();
